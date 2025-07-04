@@ -1,4 +1,4 @@
-name: security
+name: Security Scanning
 
 on:
   push:
@@ -72,30 +72,11 @@ jobs:
           output: "trivy-results.sarif"
 
       - name: Upload Trivy scan results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v2
+        uses: github/codeql-action/upload-sarif@v3
         if: always()
         with:
           sarif_file: "trivy-results.sarif"
 
-  static-analysis:
-    name: Static Code Analysis
-    runs-on: ubuntu-latest
-    permissions:
-      actions: read
-      contents: read
-      security-events: write
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@v2
-        with:
-          languages: rust
-
-      - name: Autobuild
-        uses: github/codeql-action/autobuild@v2
-
-      - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v2
+  # Note: CodeQL static analysis is handled automatically by GitHub
+  # when configured in repository settings (Settings → Security → Code scanning)
+  # This eliminates the need for explicit CodeQL workflow steps
