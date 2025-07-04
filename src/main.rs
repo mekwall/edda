@@ -200,6 +200,7 @@ async fn handle_task_commands(subcommand: TaskCommands, config: &EddaConfig) -> 
                     message: format!("Invalid task ID: {id}"),
                 })
             })?;
+            // TODO: Implement start_task in TaskEngine
             let task = task_engine.start_task(task_id).await?;
             println!(
                 "Started task {}: {}",
@@ -214,6 +215,7 @@ async fn handle_task_commands(subcommand: TaskCommands, config: &EddaConfig) -> 
                     message: format!("Invalid task ID: {id}"),
                 })
             })?;
+            // TODO: Implement stop_task in TaskEngine
             let task = task_engine.stop_task(task_id).await?;
             println!(
                 "Stopped task {}: {}",
@@ -228,9 +230,10 @@ async fn handle_task_commands(subcommand: TaskCommands, config: &EddaConfig) -> 
                     message: format!("Invalid task ID: {id}"),
                 })
             })?;
+            // TODO: Implement annotate_task in TaskEngine
             let task = task_engine.annotate_task(task_id, note).await?;
             println!(
-                "Added annotation to task {}: {}",
+                "Annotated task {}: {}",
                 task.id.unwrap_or(0),
                 task.description
             );
@@ -242,6 +245,7 @@ async fn handle_task_commands(subcommand: TaskCommands, config: &EddaConfig) -> 
                     message: format!("Invalid task ID: {id}"),
                 })
             })?;
+            // TODO: Implement add_tag in TaskEngine
             let task = task_engine.add_tag(task_id, tag).await?;
             println!(
                 "Added tag to task {}: {}",
@@ -256,6 +260,7 @@ async fn handle_task_commands(subcommand: TaskCommands, config: &EddaConfig) -> 
                     message: format!("Invalid task ID: {id}"),
                 })
             })?;
+            // TODO: Implement remove_tag in TaskEngine
             let task = task_engine.remove_tag(task_id, &tag).await?;
             println!(
                 "Removed tag from task {}: {}",

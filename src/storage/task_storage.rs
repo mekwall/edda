@@ -30,8 +30,7 @@ pub trait TaskStorage {
 }
 
 /// Task filter for querying tasks
-#[derive(Debug, Clone)]
-#[derive(Default)]
+#[derive(Debug, Clone, Default)]
 pub struct TaskFilter {
     pub status: Option<TaskStatus>,
     pub project: Option<String>,
@@ -41,7 +40,6 @@ pub struct TaskFilter {
     pub limit: Option<u32>,
     pub offset: Option<u32>,
 }
-
 
 /// SQLite implementation of task storage
 pub struct SqliteTaskStorage {
@@ -518,6 +516,7 @@ fn row_to_task(row: sqlx::sqlite::SqliteRow) -> EddaResult<Task> {
 mod tests {
     use super::*;
     use serial_test::serial;
+    use sqlx::sqlite::SqlitePoolOptions;
 
     #[tokio::test]
     #[serial]

@@ -122,10 +122,11 @@ MVP Phase 0 focuses on simple task management and GitHub sync to enable internal
 - [ ] Implement `edda task <id> modify <field> <value>` command (Taskwarrior: `task <id> modify`)
 - [ ] Implement `edda task <id> done` command (Taskwarrior: `task <id> done`)
 - [ ] Implement `edda task <id> delete` command (Taskwarrior: `task <id> delete`)
-- [ ] Implement `edda task <id> start` command (Taskwarrior: `task <id> start`)
-- [ ] Implement `edda task <id> stop` command (Taskwarrior: `task <id> stop`)
-- [ ] Implement `edda task <id> annotate <note>` command (Taskwarrior: `task <id> annotate`)
-- [ ] Implement `edda task <id> +tag` and `edda task <id> -tag` commands
+- [x] Implement `edda task <id> start` command (Taskwarrior: `task <id> start`)
+- [x] Implement `edda task <id> stop` command (Taskwarrior: `task <id> stop`)
+- [x] Implement `edda task <id> annotate <note>` command (Taskwarrior: `task <id> annotate`)
+- [x] Implement `edda task <id> +tag` and `edda task <id> -tag` commands
+  - Commit: <pending-commit-hash>
 
 #### TASK-002-005: Task Output Formatting
 
