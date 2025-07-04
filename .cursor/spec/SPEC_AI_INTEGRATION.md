@@ -543,7 +543,7 @@ impl EventHandler for AgentEventHandler {
 
 ## Automation Service
 
-### Automation Service
+### Automation Service Specification
 
 ```rust
 pub struct AutomationService {

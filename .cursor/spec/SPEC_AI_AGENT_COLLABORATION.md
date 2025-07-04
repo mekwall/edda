@@ -286,7 +286,7 @@ pub struct DecisionOption {
 }
 ```
 
-### Communication Protocols
+### Communication Protocols Specification
 
 ```rust
 #[derive(Debug, Clone)]
