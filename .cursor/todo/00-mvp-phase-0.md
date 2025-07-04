@@ -134,15 +134,17 @@ MVP Phase 0 focuses on simple task management and GitHub sync to enable internal
 - [x] Implement JSON output format for automation
 - [x] Add basic table formatting for task lists
 - [x] Support --format flag for output selection
-  - Commit: <pending-commit-hash>
+  - Commit: ed30684
   - Note: Both text and JSON output are supported for task list and get commands.
 
 #### TASK-002-006: Task Validation
 
-- [ ] Validate task title (non-empty)
-- [ ] Validate task status transitions
-- [ ] Validate priority values
-- [ ] Add helpful error messages for validation failures
+- [x] Validate task title (non-empty)
+- [x] Validate task status transitions
+- [x] Validate priority values
+- [x] Add helpful error messages for validation failures
+  - Commit: ed30684
+  - Note: Validation for title, status transitions, priority, and error messages is enforced and tested.
 
 ## Local Storage Implementation
 
@@ -150,11 +152,13 @@ MVP Phase 0 focuses on simple task management and GitHub sync to enable internal
 
 #### TASK-003-001: SQLite Storage Engine
 
-- [ ] Implement SQLite database schema for all data types
-- [ ] Create StorageEngine trait and SQLite implementation
-- [ ] Add data versioning and migration support
-- [ ] Implement efficient indexing for queries
-- [ ] Add data integrity checks and constraints
+- [x] Implement SQLite database schema for all data types
+- [x] Create StorageEngine trait and SQLite implementation
+- [x] Add data versioning and migration support
+- [x] Implement efficient indexing for queries
+- [x] Add data integrity checks and constraints
+  - Commit: <pending-commit-hash>
+  - Note: Database schema includes tasks, documents, state tables with constraints, indexes, and migration support.
 
 #### TASK-003-002: Data Persistence
 
