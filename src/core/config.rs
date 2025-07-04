@@ -29,15 +29,24 @@ pub struct EddaConfig {
 /// GitHub-specific configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GitHubConfig {
-    /// GitHub personal access token
-    pub token: Option<String>,
-
     /// GitHub repository (owner/repo format)
     pub repository: Option<String>,
 
     /// Sync interval in seconds
     #[serde(default = "default_sync_interval")]
     pub sync_interval: u64,
+
+    /// Sync mode: "issues", "projects", or "both"
+    #[serde(default = "default_sync_mode")]
+    pub sync_mode: String,
+
+    /// Project board IDs (for multi-project sync)
+    #[serde(default)]
+    pub project_ids: Vec<u64>,
+
+    /// Column mapping for project boards (column_name -> task_status)
+    #[serde(default = "default_column_mapping")]
+    pub column_mapping: std::collections::HashMap<String, String>,
 }
 
 /// Database-specific configuration
@@ -67,9 +76,11 @@ impl Default for EddaConfig {
 impl Default for GitHubConfig {
     fn default() -> Self {
         Self {
-            token: None,
             repository: None,
             sync_interval: default_sync_interval(),
+            sync_mode: default_sync_mode(),
+            project_ids: Vec::new(),
+            column_mapping: default_column_mapping(),
         }
     }
 }
@@ -119,9 +130,6 @@ impl EddaConfig {
                 })?;
                 self.database.max_connections = max_conn;
             }
-            "github.token" => {
-                self.github.token = Some(value.to_string());
-            }
             "github.repository" => {
                 self.github.repository = Some(value.to_string());
             }
@@ -130,6 +138,33 @@ impl EddaConfig {
                     message: format!("Invalid sync_interval value: {}", value),
                 })?;
                 self.github.sync_interval = interval;
+            }
+            "github.sync_mode" => {
+                let valid_modes = ["issues", "projects", "both"];
+                if !valid_modes.contains(&value) {
+                    return Err(ConfigError::Validation {
+                        message: format!("Invalid sync_mode: {}", value),
+                    }
+                    .into());
+                }
+                self.github.sync_mode = value.to_string();
+            }
+            "github.project_ids" => {
+                let ids: Vec<u64> = value
+                    .split(',')
+                    .filter_map(|s| s.trim().parse::<u64>().ok())
+                    .collect();
+                self.github.project_ids = ids;
+            }
+            "github.column_mapping" => {
+                let mut map = std::collections::HashMap::new();
+                for pair in value.split(',') {
+                    let parts: Vec<&str> = pair.split('=').collect();
+                    if parts.len() == 2 {
+                        map.insert(parts[0].to_string(), parts[1].to_string());
+                    }
+                }
+                self.github.column_mapping = map;
             }
             _ => {
                 return Err(ConfigError::Validation {
@@ -149,9 +184,24 @@ impl EddaConfig {
             "output_format" => Some(self.output_format.clone()),
             "database.url" => Some(self.database.url.clone()),
             "database.max_connections" => Some(self.database.max_connections.to_string()),
-            "github.token" => self.github.token.clone(),
             "github.repository" => self.github.repository.clone(),
             "github.sync_interval" => Some(self.github.sync_interval.to_string()),
+            "github.sync_mode" => Some(self.github.sync_mode.clone()),
+            "github.project_ids" => Some(
+                self.github
+                    .project_ids
+                    .iter()
+                    .map(|id| id.to_string())
+                    .collect::<Vec<_>>()
+                    .join(","),
+            ),
+            "github.column_mapping" => {
+                let mut pairs = Vec::new();
+                for (k, v) in &self.github.column_mapping {
+                    pairs.push(format!("{}={}", k, v));
+                }
+                Some(pairs.join(","))
+            }
             _ => None,
         }
     }
@@ -248,10 +298,6 @@ fn override_from_env(config: &mut EddaConfig) {
         config.output_format = output_format;
     }
 
-    if let Ok(token) = std::env::var("EDDA_GITHUB_TOKEN") {
-        config.github.token = Some(token);
-    }
-
     if let Ok(repo) = std::env::var("EDDA_GITHUB_REPOSITORY") {
         config.github.repository = Some(repo);
     }
@@ -286,6 +332,39 @@ pub fn validate_config(config: &EddaConfig) -> EddaResult<()> {
             message: format!("Invalid output format: {}", config.output_format),
         }
         .into());
+    }
+
+    // Validate GitHub sync mode
+    let valid_sync_modes = ["issues", "projects", "both"];
+    if !valid_sync_modes.contains(&config.github.sync_mode.as_str()) {
+        return Err(ConfigError::Validation {
+            message: format!("Invalid sync_mode: {}", config.github.sync_mode),
+        }
+        .into());
+    }
+
+    // Validate project_ids if sync_mode is "projects" or "both"
+    if config.github.sync_mode == "projects" || config.github.sync_mode == "both" {
+        if config.github.project_ids.is_empty() {
+            return Err(ConfigError::Validation {
+                message: "project_ids is required when sync_mode is 'projects' or 'both'"
+                    .to_string(),
+            }
+            .into());
+        }
+    }
+
+    // Validate column_mapping
+    for (column_name, task_status) in &config.github.column_mapping {
+        if column_name.is_empty() || task_status.is_empty() {
+            return Err(ConfigError::Validation {
+                message: format!(
+                    "Invalid column_mapping entry: {}={}",
+                    column_name, task_status
+                ),
+            }
+            .into());
+        }
     }
 
     Ok(())
@@ -326,6 +405,16 @@ pub fn find_config_file() -> Option<PathBuf> {
     None
 }
 
+/// Get GitHub token from environment variables
+/// Checks for tokens in order: GITHUB_TOKEN, EDDA_GITHUB_TOKEN, GH_TOKEN, GITHUB_ACCESS_TOKEN
+pub fn get_github_token() -> Option<String> {
+    std::env::var("GITHUB_TOKEN")
+        .or_else(|_| std::env::var("EDDA_GITHUB_TOKEN"))
+        .or_else(|_| std::env::var("GH_TOKEN"))
+        .or_else(|_| std::env::var("GITHUB_ACCESS_TOKEN"))
+        .ok()
+}
+
 // Default value functions
 fn default_data_dir() -> PathBuf {
     dirs::config_dir()
@@ -343,6 +432,18 @@ fn default_output_format() -> String {
 
 fn default_sync_interval() -> u64 {
     300 // 5 minutes
+}
+
+fn default_sync_mode() -> String {
+    "issues".to_string()
+}
+
+fn default_column_mapping() -> std::collections::HashMap<String, String> {
+    let mut map = std::collections::HashMap::new();
+    map.insert("To Do".to_string(), "todo".to_string());
+    map.insert("In Progress".to_string(), "in_progress".to_string());
+    map.insert("Done".to_string(), "done".to_string());
+    map
 }
 
 fn default_database_url() -> String {
@@ -368,6 +469,9 @@ mod tests {
         assert_eq!(config.output_format, "text");
         assert_eq!(config.github.sync_interval, 300);
         assert_eq!(config.database.max_connections, 5);
+        assert_eq!(config.github.sync_mode, "issues");
+        assert_eq!(config.github.project_ids.len(), 0);
+        assert_eq!(config.github.column_mapping.len(), 3);
     }
 
     #[test]
@@ -377,7 +481,7 @@ mod tests {
         unsafe {
             std::env::remove_var("EDDA_LOG_LEVEL");
             std::env::remove_var("EDDA_OUTPUT_FORMAT");
-            std::env::remove_var("EDDA_GITHUB_TOKEN");
+            std::env::remove_var("EDDA_GITHUB_REPOSITORY");
         }
 
         // Test that config loads successfully
@@ -388,6 +492,16 @@ mod tests {
         assert!(!config.output_format.is_empty());
         assert!(config.github.sync_interval > 0);
         assert!(config.database.max_connections > 0);
+        let valid_modes = ["issues", "projects", "both"];
+        assert!(valid_modes.contains(&config.github.sync_mode.as_str()));
+        assert!(
+            config
+                .github
+                .project_ids
+                .iter()
+                .all(|id| *id > 0 || *id == 0)
+        );
+        assert_eq!(config.github.column_mapping.len(), 3);
     }
 
     #[test]
@@ -400,9 +514,14 @@ mod tests {
             log_level = "debug"
             output_format = "json"
             [github]
-            token = "test-token"
             repository = "test/repo"
             sync_interval = 600
+            sync_mode = "projects"
+            project_ids = [1234567890, 9876543210]
+            [github.column_mapping]
+            "To Do" = "todo"
+            "In Progress" = "in_progress"
+            "Done" = "done"
         "#;
 
         fs::write(&config_path, config_content).unwrap();
@@ -410,9 +529,11 @@ mod tests {
         let config = load_config(Some(config_path)).unwrap();
         assert_eq!(config.log_level, "debug");
         assert_eq!(config.output_format, "json");
-        assert_eq!(config.github.token, Some("test-token".to_string()));
         assert_eq!(config.github.repository, Some("test/repo".to_string()));
         assert_eq!(config.github.sync_interval, 600);
+        assert_eq!(config.github.sync_mode, "projects");
+        assert_eq!(config.github.project_ids, vec![1234567890, 9876543210]);
+        assert_eq!(config.github.column_mapping.len(), 3);
     }
 
     #[test]
@@ -451,19 +572,19 @@ mod tests {
         unsafe {
             std::env::set_var("EDDA_LOG_LEVEL", "debug");
             std::env::set_var("EDDA_OUTPUT_FORMAT", "json");
-            std::env::set_var("EDDA_GITHUB_TOKEN", "env-token");
+            std::env::set_var("EDDA_GITHUB_REPOSITORY", "env-repo");
         }
 
         let config = load_config(None).unwrap();
         assert_eq!(config.log_level, "debug");
         assert_eq!(config.output_format, "json");
-        assert_eq!(config.github.token, Some("env-token".to_string()));
+        assert_eq!(config.github.repository, Some("env-repo".to_string()));
 
         // Clean up
         unsafe {
             std::env::remove_var("EDDA_LOG_LEVEL");
             std::env::remove_var("EDDA_OUTPUT_FORMAT");
-            std::env::remove_var("EDDA_GITHUB_TOKEN");
+            std::env::remove_var("EDDA_GITHUB_REPOSITORY");
         }
     }
 
@@ -506,9 +627,11 @@ mod tests {
     #[test]
     fn test_github_config_default() {
         let config = GitHubConfig::default();
-        assert_eq!(config.token, None);
         assert_eq!(config.repository, None);
         assert_eq!(config.sync_interval, 300);
+        assert_eq!(config.sync_mode, "issues");
+        assert_eq!(config.project_ids.len(), 0);
+        assert_eq!(config.column_mapping.len(), 3);
     }
 
     #[test]
@@ -631,7 +754,7 @@ mod tests {
         unsafe {
             std::env::remove_var("EDDA_LOG_LEVEL");
             std::env::remove_var("EDDA_OUTPUT_FORMAT");
-            std::env::remove_var("EDDA_GITHUB_TOKEN");
+            std::env::remove_var("EDDA_GITHUB_REPOSITORY");
         }
 
         // Test that no config file is found and defaults are used
@@ -667,7 +790,7 @@ mod tests {
         unsafe {
             std::env::remove_var("EDDA_LOG_LEVEL");
             std::env::remove_var("EDDA_OUTPUT_FORMAT");
-            std::env::remove_var("EDDA_GITHUB_TOKEN");
+            std::env::remove_var("EDDA_GITHUB_REPOSITORY");
         }
 
         // Test that config loads successfully (either from home or defaults)

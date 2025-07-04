@@ -122,37 +122,38 @@ pub struct GitHubWorkflowRun {
 }
 
 impl GitHubClient {
-    /// Create a new GitHub API client
+    /// Create a new GitHub client
     pub fn new(config: GitHubConfig) -> Result<Self, EddaError> {
-        let token = config.token.clone().ok_or_else(|| {
-            EddaError::Sync(SyncError::Authentication {
-                message: "GitHub token not configured".to_string(),
-            })
-        })?;
+        // Get token from environment variables
+        let token = crate::core::config::get_github_token()
+            .ok_or_else(|| EddaError::Sync(SyncError::Authentication {
+                message: "GitHub token not found. Set GITHUB_TOKEN, EDDA_GITHUB_TOKEN, GH_TOKEN, or GITHUB_ACCESS_TOKEN environment variable.".to_string(),
+            }))?;
 
         let repository = config.repository.clone().ok_or_else(|| {
-            EddaError::Sync(SyncError::ProviderNotFound {
-                provider: "GitHub".to_string(),
+            EddaError::Sync(SyncError::Configuration {
+                message: "GitHub repository not configured".to_string(),
             })
         })?;
 
-        // Parse repository in format "owner/repo"
-        let parts: Vec<&str> = repository.split('/').collect();
-        if parts.len() != 2 {
-            return Err(EddaError::Sync(SyncError::ProviderNotFound {
-                provider: format!("Invalid repository format: {}", repository),
-            }));
-        }
-
-        let owner = parts[0].to_string();
-        let repo = parts[1].to_string();
+        let (owner, repo) = repository.split_once('/').ok_or_else(|| {
+            EddaError::Sync(SyncError::Configuration {
+                message: format!(
+                    "Invalid repository format: {}. Expected 'owner/repo'",
+                    repository
+                ),
+            })
+        })?;
 
         let mut headers = reqwest::header::HeaderMap::new();
-        headers.insert("Authorization", format!("token {}", token).parse().unwrap());
+        headers.insert(
+            "Authorization",
+            format!("Bearer {}", token).parse().unwrap(),
+        );
+        headers.insert("User-Agent", "Edda/1.0".parse().unwrap());
         headers.insert("Accept", "application/vnd.github.v3+json".parse().unwrap());
-        headers.insert("User-Agent", "edda-cli".parse().unwrap());
 
-        let client = Client::builder()
+        let client = reqwest::Client::builder()
             .default_headers(headers)
             .build()
             .map_err(|e| {
@@ -165,8 +166,8 @@ impl GitHubClient {
             client,
             config,
             base_url: "https://api.github.com".to_string(),
-            owner,
-            repo,
+            owner: owner.to_string(),
+            repo: repo.to_string(),
         })
     }
 
@@ -380,6 +381,193 @@ impl GitHubClient {
         Ok(columns)
     }
 
+    /// Create a project card
+    pub async fn create_project_card(
+        &self,
+        column_id: u64,
+        note: &str,
+    ) -> EddaResult<GitHubProjectCard> {
+        let url = format!("{}/projects/columns/{}/cards", self.base_url, column_id);
+
+        let payload = serde_json::json!({
+            "note": note,
+        });
+
+        let response = self
+            .client
+            .post(&url)
+            .json(&payload)
+            .send()
+            .await
+            .map_err(|e| {
+                EddaError::Sync(SyncError::Network {
+                    message: format!("Failed to create GitHub project card: {}", e),
+                })
+            })?;
+
+        if !response.status().is_success() {
+            return Err(EddaError::Sync(SyncError::Network {
+                message: format!(
+                    "GitHub API error: {} {}",
+                    response.status(),
+                    response.text().await.unwrap_or_default()
+                ),
+            }));
+        }
+
+        let card: GitHubProjectCard = response.json().await.map_err(|e| {
+            EddaError::Sync(SyncError::Network {
+                message: format!("Failed to parse GitHub project card: {}", e),
+            })
+        })?;
+
+        Ok(card)
+    }
+
+    /// Update a project card
+    pub async fn update_project_card(
+        &self,
+        card_id: u64,
+        note: &str,
+    ) -> EddaResult<GitHubProjectCard> {
+        let url = format!("{}/projects/columns/cards/{}", self.base_url, card_id);
+
+        let payload = serde_json::json!({
+            "note": note,
+        });
+
+        let response = self
+            .client
+            .patch(&url)
+            .json(&payload)
+            .send()
+            .await
+            .map_err(|e| {
+                EddaError::Sync(SyncError::Network {
+                    message: format!("Failed to update GitHub project card: {}", e),
+                })
+            })?;
+
+        if !response.status().is_success() {
+            return Err(EddaError::Sync(SyncError::Network {
+                message: format!(
+                    "GitHub API error: {} {}",
+                    response.status(),
+                    response.text().await.unwrap_or_default()
+                ),
+            }));
+        }
+
+        let card: GitHubProjectCard = response.json().await.map_err(|e| {
+            EddaError::Sync(SyncError::Network {
+                message: format!("Failed to parse GitHub project card: {}", e),
+            })
+        })?;
+
+        Ok(card)
+    }
+
+    /// Move a project card to a different column
+    pub async fn move_project_card(
+        &self,
+        card_id: u64,
+        column_id: u64,
+        position: Option<&str>,
+    ) -> EddaResult<()> {
+        let url = format!("{}/projects/columns/cards/{}/moves", self.base_url, card_id);
+
+        let mut payload = serde_json::json!({
+            "column_id": column_id,
+        });
+
+        if let Some(pos) = position {
+            payload["position"] = serde_json::Value::String(pos.to_string());
+        }
+
+        let response = self
+            .client
+            .post(&url)
+            .json(&payload)
+            .send()
+            .await
+            .map_err(|e| {
+                EddaError::Sync(SyncError::Network {
+                    message: format!("Failed to move GitHub project card: {}", e),
+                })
+            })?;
+
+        if !response.status().is_success() {
+            return Err(EddaError::Sync(SyncError::Network {
+                message: format!(
+                    "GitHub API error: {} {}",
+                    response.status(),
+                    response.text().await.unwrap_or_default()
+                ),
+            }));
+        }
+
+        Ok(())
+    }
+
+    /// Delete a project card
+    pub async fn delete_project_card(&self, card_id: u64) -> EddaResult<()> {
+        let url = format!("{}/projects/columns/cards/{}", self.base_url, card_id);
+
+        let response = self.client.delete(&url).send().await.map_err(|e| {
+            EddaError::Sync(SyncError::Network {
+                message: format!("Failed to delete GitHub project card: {}", e),
+            })
+        })?;
+
+        if !response.status().is_success() {
+            return Err(EddaError::Sync(SyncError::Network {
+                message: format!(
+                    "GitHub API error: {} {}",
+                    response.status(),
+                    response.text().await.unwrap_or_default()
+                ),
+            }));
+        }
+
+        Ok(())
+    }
+
+    /// Get all cards from a project
+    pub async fn get_project_cards(&self, project_id: u64) -> EddaResult<Vec<GitHubProjectCard>> {
+        let columns = self.get_project_columns(project_id).await?;
+        let mut all_cards = Vec::new();
+
+        for column in columns {
+            let url = format!("{}/projects/columns/{}/cards", self.base_url, column.id);
+
+            let response = self.client.get(&url).send().await.map_err(|e| {
+                EddaError::Sync(SyncError::Network {
+                    message: format!("Failed to fetch GitHub project cards: {}", e),
+                })
+            })?;
+
+            if !response.status().is_success() {
+                return Err(EddaError::Sync(SyncError::Network {
+                    message: format!(
+                        "GitHub API error: {} {}",
+                        response.status(),
+                        response.text().await.unwrap_or_default()
+                    ),
+                }));
+            }
+
+            let cards: Vec<GitHubProjectCard> = response.json().await.map_err(|e| {
+                EddaError::Sync(SyncError::Network {
+                    message: format!("Failed to parse GitHub project cards: {}", e),
+                })
+            })?;
+
+            all_cards.extend(cards);
+        }
+
+        Ok(all_cards)
+    }
+
     /// Get workflow runs
     pub async fn get_workflow_runs(
         &self,
@@ -426,75 +614,117 @@ impl GitHubClient {
     pub fn issue_to_task(&self, issue: &GitHubIssue) -> Task {
         let mut task = Task::new(issue.title.clone());
 
-        // Set description from issue body
+        // Combine title and body for description
+        let mut description = issue.title.clone();
         if let Some(body) = &issue.body {
-            task.description = format!("{}\n\nGitHub Issue: {}", issue.title, body);
+            if !body.is_empty() {
+                description.push_str("\n\nGitHub Issue: ");
+                description.push_str(body);
+            }
         }
+        task.description = description;
 
-        // Set status based on issue state
-        task.status = if issue.state == "closed" {
-            crate::core::task::TaskStatus::Completed
-        } else {
-            crate::core::task::TaskStatus::Pending
+        // Map issue state to task status
+        task.status = match issue.state.as_str() {
+            "closed" => crate::core::task::TaskStatus::Completed,
+            _ => crate::core::task::TaskStatus::Pending,
         };
 
-        // Add labels as tags
-        for label in &issue.labels {
-            task.add_tag(label.name.clone());
-        }
-
-        // Add assignees as tags
-        for assignee in &issue.assignees {
-            task.add_tag(format!("@{}", assignee.login));
-        }
-
-        // Set dates
-        task.entry_date = issue.created_at;
-        task.modified_date = issue.updated_at;
-        if let Some(closed_at) = issue.closed_at {
-            task.end_date = Some(closed_at);
-        }
-
-        // Add GitHub metadata
-        task.add_annotation(format!(
-            "GitHub Issue #{}: {}",
-            issue.number, issue.html_url
-        ));
+        // Add GitHub URL as annotation
+        task.add_annotation(format!("GitHub Issue: {}", issue.html_url));
 
         task
     }
 
-    /// Convert a local task to GitHub issue data
-    pub fn task_to_issue_data(&self, task: &Task) -> serde_json::Value {
-        let mut payload = serde_json::Map::new();
+    /// Convert a project card to a local task
+    pub fn card_to_task(&self, card: &GitHubProjectCard, column_name: &str) -> Task {
+        let mut task = Task::new(card.note.clone().unwrap_or_default());
 
-        payload.insert(
+        // Map column name to task status using config mapping
+        let status = match column_name {
+            "To Do" => crate::core::task::TaskStatus::Pending,
+            "In Progress" => crate::core::task::TaskStatus::InProgress,
+            "Done" => crate::core::task::TaskStatus::Completed,
+            _ => crate::core::task::TaskStatus::Pending,
+        };
+        task.status = status;
+
+        // Add project card info as annotation
+        task.add_annotation(format!("GitHub Project Card: {}", card.id));
+
+        task
+    }
+
+    /// Convert a task to GitHub issue data
+    pub fn task_to_issue_data(&self, task: &Task) -> serde_json::Value {
+        let mut data = serde_json::Map::new();
+        data.insert(
             "title".to_string(),
             serde_json::Value::String(task.description.clone()),
         );
 
-        // Extract GitHub issue URL from annotations if present
-        let mut body = task.description.clone();
-        for annotation in &task.annotations {
-            if annotation.description.contains("GitHub Issue #") {
-                body = annotation.description.clone();
-                break;
-            }
-        }
-
-        payload.insert("body".to_string(), serde_json::Value::String(body));
-
-        // Set state based on task status
+        // Map task status to issue state
         let state = match task.status {
             crate::core::task::TaskStatus::Completed => "closed",
             _ => "open",
         };
-        payload.insert(
+        data.insert(
             "state".to_string(),
             serde_json::Value::String(state.to_string()),
         );
 
-        serde_json::Value::Object(payload)
+        serde_json::Value::Object(data)
+    }
+
+    /// Convert a task to project card note
+    pub fn task_to_card_note(&self, task: &Task) -> String {
+        task.description.clone()
+    }
+
+    /// Get the appropriate column ID for a task status
+    pub async fn get_column_id_for_status(
+        &self,
+        project_id: u64,
+        status: &crate::core::task::TaskStatus,
+        column_mapping: &std::collections::HashMap<String, String>,
+    ) -> EddaResult<Option<u64>> {
+        let columns = self.get_project_columns(project_id).await?;
+
+        // Find the column name that maps to this status
+        let target_status = match status {
+            crate::core::task::TaskStatus::Pending => "todo",
+            crate::core::task::TaskStatus::InProgress => "in_progress",
+            crate::core::task::TaskStatus::Completed => "done",
+            crate::core::task::TaskStatus::Deleted => "deleted",
+            crate::core::task::TaskStatus::Waiting => "waiting",
+        };
+
+        for (column_name, mapped_status) in column_mapping {
+            if mapped_status == target_status {
+                // Find the column with this name
+                for column in &columns {
+                    if column.name == *column_name {
+                        return Ok(Some(column.id));
+                    }
+                }
+            }
+        }
+
+        // Fallback to default mapping
+        for column in &columns {
+            match (status, column.name.as_str()) {
+                (crate::core::task::TaskStatus::Pending, "To Do")
+                | (crate::core::task::TaskStatus::InProgress, "In Progress")
+                | (crate::core::task::TaskStatus::Completed, "Done")
+                | (crate::core::task::TaskStatus::Deleted, "Done")
+                | (crate::core::task::TaskStatus::Waiting, "To Do") => {
+                    return Ok(Some(column.id));
+                }
+                _ => {}
+            }
+        }
+
+        Ok(None)
     }
 }
 
@@ -574,9 +804,11 @@ mod tests {
     #[test]
     fn test_github_client_new() {
         let config = GitHubConfig {
-            token: Some("test_token".to_string()),
             repository: Some("test_owner/test_repo".to_string()),
             sync_interval: 300,
+            sync_mode: "issues".to_string(),
+            project_ids: vec![1234567890],
+            column_mapping: std::collections::HashMap::new(),
         };
 
         let client = GitHubClient::new(config).unwrap();
@@ -587,10 +819,19 @@ mod tests {
 
     #[test]
     fn test_github_client_new_missing_token() {
+        unsafe {
+            std::env::remove_var("GITHUB_TOKEN");
+            std::env::remove_var("EDDA_GITHUB_TOKEN");
+            std::env::remove_var("GH_TOKEN");
+            std::env::remove_var("GITHUB_ACCESS_TOKEN");
+        }
+
         let config = GitHubConfig {
-            token: None,
             repository: Some("test_owner/test_repo".to_string()),
             sync_interval: 300,
+            sync_mode: "issues".to_string(),
+            project_ids: vec![1234567890],
+            column_mapping: std::collections::HashMap::new(),
         };
 
         let result = GitHubClient::new(config);
@@ -600,9 +841,11 @@ mod tests {
     #[test]
     fn test_github_client_new_invalid_repository() {
         let config = GitHubConfig {
-            token: Some("test_token".to_string()),
             repository: Some("invalid_repo_format".to_string()),
             sync_interval: 300,
+            sync_mode: "issues".to_string(),
+            project_ids: vec![1234567890],
+            column_mapping: std::collections::HashMap::new(),
         };
 
         let result = GitHubClient::new(config);
@@ -611,10 +854,15 @@ mod tests {
 
     #[test]
     fn test_issue_to_task_conversion() {
+        unsafe {
+            std::env::set_var("GITHUB_TOKEN", "dummy");
+        }
         let config = GitHubConfig {
-            token: Some("test_token".to_string()),
             repository: Some("test_owner/test_repo".to_string()),
             sync_interval: 300,
+            sync_mode: "issues".to_string(),
+            project_ids: vec![1234567890],
+            column_mapping: std::collections::HashMap::new(),
         };
 
         let client = GitHubClient::new(config).unwrap();
@@ -642,10 +890,15 @@ mod tests {
 
     #[test]
     fn test_task_to_issue_data_conversion() {
+        unsafe {
+            std::env::set_var("GITHUB_TOKEN", "dummy");
+        }
         let config = GitHubConfig {
-            token: Some("test_token".to_string()),
             repository: Some("test_owner/test_repo".to_string()),
             sync_interval: 300,
+            sync_mode: "issues".to_string(),
+            project_ids: vec![1234567890],
+            column_mapping: std::collections::HashMap::new(),
         };
 
         let client = GitHubClient::new(config).unwrap();
@@ -664,15 +917,19 @@ mod tests {
 /// GitHub sync provider implementation
 pub struct GitHubSyncProvider {
     client: GitHubClient,
+    config: crate::core::config::GitHubConfig,
     issue_mapping: HashMap<i64, u64>, // task_id -> issue_number
+    card_mapping: HashMap<i64, u64>,  // task_id -> card_id
 }
 
 impl GitHubSyncProvider {
     /// Create a new GitHub sync provider
-    pub fn new(config: GitHubConfig) -> Result<Self, EddaError> {
+    pub fn new(config: crate::core::config::GitHubConfig) -> Result<Self, EddaError> {
         Ok(Self {
-            client: GitHubClient::new(config)?,
+            client: GitHubClient::new(config.clone())?,
+            config,
             issue_mapping: HashMap::new(),
+            card_mapping: HashMap::new(),
         })
     }
 }
@@ -684,59 +941,286 @@ impl SyncProvider for GitHubSyncProvider {
     }
 
     async fn pull_tasks(&self) -> EddaResult<Vec<Task>> {
-        let issues = self.client.get_issues(None).await?;
-        let mut tasks = Vec::new();
+        let mut all_tasks = Vec::new();
 
-        for issue in issues {
-            let task = self.client.issue_to_task(&issue);
-            tasks.push(task);
+        match self.config.sync_mode.as_str() {
+            "issues" => {
+                let issues = self.client.get_issues(None).await?;
+                for issue in issues {
+                    let task = self.client.issue_to_task(&issue);
+                    all_tasks.push(task);
+                }
+            }
+            "projects" => {
+                for project_id in &self.config.project_ids {
+                    let cards = self.client.get_project_cards(*project_id).await?;
+                    let columns = self.client.get_project_columns(*project_id).await?;
+                    let mut column_names = HashMap::new();
+                    for column in columns {
+                        column_names.insert(column.id, column.name);
+                    }
+                    let unknown = "Unknown".to_string();
+                    for card in cards {
+                        let column_name = column_names
+                            .get(&card.column_id)
+                            .unwrap_or(&unknown)
+                            .clone();
+                        let task = self.client.card_to_task(&card, &column_name);
+                        all_tasks.push(task);
+                    }
+                }
+            }
+            "both" => {
+                let issues = self.client.get_issues(None).await?;
+                for issue in issues {
+                    let task = self.client.issue_to_task(&issue);
+                    all_tasks.push(task);
+                }
+                for project_id in &self.config.project_ids {
+                    let cards = self.client.get_project_cards(*project_id).await?;
+                    let columns = self.client.get_project_columns(*project_id).await?;
+                    let mut column_names = HashMap::new();
+                    for column in columns {
+                        column_names.insert(column.id, column.name);
+                    }
+                    let unknown = "Unknown".to_string();
+                    for card in cards {
+                        let column_name = column_names
+                            .get(&card.column_id)
+                            .unwrap_or(&unknown)
+                            .clone();
+                        let task = self.client.card_to_task(&card, &column_name);
+                        all_tasks.push(task);
+                    }
+                }
+            }
+            _ => {
+                return Err(EddaError::Sync(SyncError::Configuration {
+                    message: format!("Invalid sync_mode: {}", self.config.sync_mode),
+                }));
+            }
         }
 
-        Ok(tasks)
+        Ok(all_tasks)
     }
 
     async fn push_tasks(&self, tasks: &[Task]) -> EddaResult<()> {
-        for task in tasks {
-            if let Some(issue_number) = self.issue_mapping.get(&task.id.unwrap_or(0)) {
-                // Update existing issue
-                let _issue = self
-                    .client
-                    .update_issue(
-                        *issue_number,
-                        Some(&task.description),
-                        None,
-                        Some(if task.status == crate::core::task::TaskStatus::Completed {
-                            "closed"
-                        } else {
-                            "open"
-                        }),
-                    )
-                    .await?;
-            } else {
-                // Create new issue
-                let issue = self.client.create_issue(&task.description, None).await?;
-                if let Some(task_id) = task.id {
-                    // Note: We can't modify self.issue_mapping here since we're in an async trait
-                    // This would need to be handled differently in a real implementation
+        match self.config.sync_mode.as_str() {
+            "issues" => {
+                for task in tasks {
+                    if let Some(issue_number) = self.issue_mapping.get(&task.id.unwrap_or(0)) {
+                        let _issue = self
+                            .client
+                            .update_issue(
+                                *issue_number,
+                                Some(&task.description),
+                                None,
+                                Some(if task.status == crate::core::task::TaskStatus::Completed {
+                                    "closed"
+                                } else {
+                                    "open"
+                                }),
+                            )
+                            .await?;
+                    } else {
+                        let _issue = self.client.create_issue(&task.description, None).await?;
+                    }
                 }
+            }
+            "projects" => {
+                for project_id in &self.config.project_ids {
+                    for task in tasks {
+                        if let Some(card_id) = self.card_mapping.get(&task.id.unwrap_or(0)) {
+                            let _card = self
+                                .client
+                                .update_project_card(*card_id, &task.description)
+                                .await?;
+                            if let Some(column_id) = self
+                                .client
+                                .get_column_id_for_status(
+                                    *project_id,
+                                    &task.status,
+                                    &self.config.column_mapping,
+                                )
+                                .await?
+                            {
+                                self.client
+                                    .move_project_card(*card_id, column_id, None)
+                                    .await?;
+                            }
+                        } else {
+                            if let Some(column_id) = self
+                                .client
+                                .get_column_id_for_status(
+                                    *project_id,
+                                    &task.status,
+                                    &self.config.column_mapping,
+                                )
+                                .await?
+                            {
+                                let _card = self
+                                    .client
+                                    .create_project_card(column_id, &task.description)
+                                    .await?;
+                            }
+                        }
+                    }
+                }
+            }
+            "both" => {
+                for task in tasks {
+                    if let Some(issue_number) = self.issue_mapping.get(&task.id.unwrap_or(0)) {
+                        let _issue = self
+                            .client
+                            .update_issue(
+                                *issue_number,
+                                Some(&task.description),
+                                None,
+                                Some(if task.status == crate::core::task::TaskStatus::Completed {
+                                    "closed"
+                                } else {
+                                    "open"
+                                }),
+                            )
+                            .await?;
+                    } else {
+                        let _issue = self.client.create_issue(&task.description, None).await?;
+                    }
+                }
+                for project_id in &self.config.project_ids {
+                    for task in tasks {
+                        if let Some(card_id) = self.card_mapping.get(&task.id.unwrap_or(0)) {
+                            let _card = self
+                                .client
+                                .update_project_card(*card_id, &task.description)
+                                .await?;
+                            if let Some(column_id) = self
+                                .client
+                                .get_column_id_for_status(
+                                    *project_id,
+                                    &task.status,
+                                    &self.config.column_mapping,
+                                )
+                                .await?
+                            {
+                                self.client
+                                    .move_project_card(*card_id, column_id, None)
+                                    .await?;
+                            }
+                        } else {
+                            if let Some(column_id) = self
+                                .client
+                                .get_column_id_for_status(
+                                    *project_id,
+                                    &task.status,
+                                    &self.config.column_mapping,
+                                )
+                                .await?
+                            {
+                                let _card = self
+                                    .client
+                                    .create_project_card(column_id, &task.description)
+                                    .await?;
+                            }
+                        }
+                    }
+                }
+            }
+            _ => {
+                return Err(EddaError::Sync(SyncError::Configuration {
+                    message: format!("Invalid sync_mode: {}", self.config.sync_mode),
+                }));
             }
         }
         Ok(())
     }
 
     async fn get_status(&self) -> EddaResult<SyncStatus> {
-        // Test connection by trying to get issues
-        match self.client.get_issues(Some("open")).await {
-            Ok(_) => Ok(SyncStatus::Completed),
-            Err(_) => Ok(SyncStatus::Failed {
-                error: "Failed to connect to GitHub".to_string(),
+        match self.config.sync_mode.as_str() {
+            "issues" => {
+                // Test connection by trying to get issues
+                match self.client.get_issues(Some("open")).await {
+                    Ok(_) => Ok(SyncStatus::Completed),
+                    Err(_) => Ok(SyncStatus::Failed {
+                        error: "Failed to connect to GitHub Issues".to_string(),
+                    }),
+                }
+            }
+            "projects" => {
+                // Test connection by trying to get all projects
+                if self.config.project_ids.is_empty() {
+                    return Ok(SyncStatus::Failed {
+                        error: "No project_ids configured".to_string(),
+                    });
+                }
+                for project_id in &self.config.project_ids {
+                    if self.client.get_project_columns(*project_id).await.is_err() {
+                        return Ok(SyncStatus::Failed {
+                            error: format!("Failed to connect to GitHub Project ID {}", project_id),
+                        });
+                    }
+                }
+                Ok(SyncStatus::Completed)
+            }
+            "both" => {
+                let issues_ok = self.client.get_issues(Some("open")).await.is_ok();
+                let mut projects_ok = true;
+                if self.config.project_ids.is_empty() {
+                    projects_ok = false;
+                } else {
+                    for project_id in &self.config.project_ids {
+                        if self.client.get_project_columns(*project_id).await.is_err() {
+                            projects_ok = false;
+                            break;
+                        }
+                    }
+                }
+                if issues_ok && projects_ok {
+                    Ok(SyncStatus::Completed)
+                } else {
+                    Ok(SyncStatus::Failed {
+                        error: "Failed to connect to one or more GitHub services".to_string(),
+                    })
+                }
+            }
+            _ => Ok(SyncStatus::Failed {
+                error: format!("Invalid sync_mode: {}", self.config.sync_mode),
             }),
         }
     }
 
     async fn test_connection(&self) -> EddaResult<()> {
-        // Try to get a single issue to test the connection
-        self.client.get_issues(Some("open")).await?;
+        match self.config.sync_mode.as_str() {
+            "issues" => {
+                self.client.get_issues(Some("open")).await?;
+            }
+            "projects" => {
+                if self.config.project_ids.is_empty() {
+                    return Err(EddaError::Sync(SyncError::Configuration {
+                        message: "project_ids is required for projects sync mode".to_string(),
+                    }));
+                }
+                for project_id in &self.config.project_ids {
+                    self.client.get_project_columns(*project_id).await?;
+                }
+            }
+            "both" => {
+                self.client.get_issues(Some("open")).await?;
+                if self.config.project_ids.is_empty() {
+                    return Err(EddaError::Sync(SyncError::Configuration {
+                        message: "project_ids is required for both sync mode".to_string(),
+                    }));
+                }
+                for project_id in &self.config.project_ids {
+                    self.client.get_project_columns(*project_id).await?;
+                }
+            }
+            _ => {
+                return Err(EddaError::Sync(SyncError::Configuration {
+                    message: format!("Invalid sync_mode: {}", self.config.sync_mode),
+                }));
+            }
+        }
         Ok(())
     }
 }

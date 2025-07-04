@@ -90,7 +90,7 @@ async fn handle_config_commands(subcommand: ConfigCommands, config: &EddaConfig)
             println!("  GitHub Repository: {:?}", config.github.repository);
             println!(
                 "  GitHub Token: {}",
-                if config.github.token.is_some() {
+                if crate::core::config::get_github_token().is_some() {
                     "***"
                 } else {
                     "Not set"
