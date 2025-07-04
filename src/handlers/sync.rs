@@ -1,5 +1,9 @@
 use crate::cli::{GitHubSyncCommands, SyncCommands};
 use crate::core::{EddaConfig, EddaResult};
+use crate::github::GitHubSyncProvider;
+use crate::handlers::task::create_task_engine;
+use crate::storage::TaskStorage;
+use crate::sync::SyncProvider;
 
 pub async fn handle_sync_commands(subcommand: SyncCommands, config: &EddaConfig) -> EddaResult<()> {
     match subcommand {
@@ -16,14 +20,58 @@ pub async fn handle_github_sync_commands(
     match subcommand {
         GitHubSyncCommands::Pull => {
             println!("Pulling tasks from GitHub Issues...");
-            // TODO: Implement GitHub sync pull
-            println!("GitHub sync pull not yet implemented");
+
+            // Create GitHub sync provider
+            let provider = GitHubSyncProvider::new(config.github.clone())?;
+
+            // Test connection first
+            provider.test_connection().await?;
+            println!("✓ Connected to GitHub successfully");
+
+            // Pull tasks from GitHub
+            let github_tasks = provider.pull_tasks().await?;
+            println!("✓ Retrieved {} tasks from GitHub", github_tasks.len());
+
+            // Get local task engine
+            let task_engine = create_task_engine(config).await?;
+
+            // Import tasks that don't exist locally
+            let mut imported_count = 0;
+            for task in github_tasks {
+                // Check if task already exists (by description for now)
+                let existing_tasks = task_engine.list_tasks(None).await?;
+                let exists = existing_tasks
+                    .iter()
+                    .any(|t| t.description == task.description);
+
+                if !exists {
+                    task_engine.create_task(task.description).await?;
+                    imported_count += 1;
+                }
+            }
+
+            println!("✓ Imported {} new tasks from GitHub", imported_count);
             Ok(())
         }
         GitHubSyncCommands::Push => {
             println!("Pushing tasks to GitHub Issues...");
-            // TODO: Implement GitHub sync push
-            println!("GitHub sync push not yet implemented");
+
+            // Create GitHub sync provider
+            let provider = GitHubSyncProvider::new(config.github.clone())?;
+
+            // Test connection first
+            provider.test_connection().await?;
+            println!("✓ Connected to GitHub successfully");
+
+            // Get local tasks
+            let task_engine = create_task_engine(config).await?;
+            let local_tasks = task_engine.list_tasks(None).await?;
+            println!("✓ Found {} local tasks", local_tasks.len());
+
+            // Push tasks to GitHub
+            provider.push_tasks(&local_tasks).await?;
+            println!("✓ Pushed {} tasks to GitHub", local_tasks.len());
+
             Ok(())
         }
         GitHubSyncCommands::Status => {
@@ -38,7 +86,38 @@ pub async fn handle_github_sync_commands(
                 }
             );
             println!("  Sync Interval: {} seconds", config.github.sync_interval);
-            println!("  Last Sync: Not implemented yet");
+
+            // Test connection
+            if let Some(repo) = &config.github.repository {
+                if let Some(_token) = &config.github.token {
+                    match GitHubSyncProvider::new(config.github.clone()) {
+                        Ok(provider) => match provider.test_connection().await {
+                            Ok(()) => {
+                                println!("  Connection: ✓ Connected");
+                                match provider.get_status().await {
+                                    Ok(status) => {
+                                        println!("  Status: {:?}", status);
+                                    }
+                                    Err(e) => {
+                                        println!("  Status: Error - {}", e);
+                                    }
+                                }
+                            }
+                            Err(e) => {
+                                println!("  Connection: ✗ Failed - {}", e);
+                            }
+                        },
+                        Err(e) => {
+                            println!("  Connection: ✗ Configuration error - {}", e);
+                        }
+                    }
+                } else {
+                    println!("  Connection: ✗ No token configured");
+                }
+            } else {
+                println!("  Connection: ✗ No repository configured");
+            }
+
             Ok(())
         }
         GitHubSyncCommands::Config { key, value } => {

@@ -9,6 +9,25 @@ use std::sync::Arc;
 use tokio::sync::RwLock;
 use uuid::Uuid;
 
+/// Trait for sync providers (GitHub, GitLab, etc.)
+#[async_trait::async_trait]
+pub trait SyncProvider: Send + Sync {
+    /// Get the name of the provider
+    fn name(&self) -> &str;
+
+    /// Pull tasks from the remote provider
+    async fn pull_tasks(&self) -> EddaResult<Vec<Task>>;
+
+    /// Push tasks to the remote provider
+    async fn push_tasks(&self, tasks: &[Task]) -> EddaResult<()>;
+
+    /// Get sync status
+    async fn get_status(&self) -> EddaResult<SyncStatus>;
+
+    /// Test connection to the provider
+    async fn test_connection(&self) -> EddaResult<()>;
+}
+
 /// Represents a sync operation that can be queued for later execution
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum SyncOperation {

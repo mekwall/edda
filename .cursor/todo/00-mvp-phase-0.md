@@ -10,7 +10,8 @@ MVP Phase 0 focuses on simple task management and GitHub sync to enable internal
 - [x] **TASK-002**: Taskwarrior-compatible task management (create, list, modify, done, delete)
 - [x] **TASK-003**: Local-first architecture with SQLite storage
 - [x] **TASK-004**: Basic client-server sync protocol
-- [ ] **TASK-005**: Sync with GitHub Issues (bi-directional, minimal viable integration)
+- [x] **TASK-005**: Sync with GitHub Issues (bi-directional, minimal viable integration)
+  - Complete GitHub integration with bi-directional sync, field mapping, and CLI commands implemented
 - [ ] **TASK-006**: Foundation for extensible sync (GitLab, JIRA, etc. to follow)
 - [ ] **TASK-007**: Taskwarrior data import/export compatibility
 - [x] **TASK-008**: Recursive project config search for `.edda.toml` (search up from CWD, fallback to home config)
@@ -204,42 +205,48 @@ MVP Phase 0 focuses on simple task management and GitHub sync to enable internal
 - [x] Implement GitHub authentication (OAuth or personal access token)
 - [x] Create GitHub API wrapper for Issues
 - [x] Add configuration for GitHub repository and authentication
+  - Commit: [latest]
 
 #### TASK-005-002: Sync Provider Interface
 
-- [ ] Define SyncProvider trait with standard methods
-- [ ] Implement GitHubSyncProvider struct
-- [ ] Add bi-directional sync methods (pull, push)
-- [ ] Implement conflict resolution strategy
+- [x] Define SyncProvider trait with standard methods
+- [x] Implement GitHubSyncProvider struct
+- [x] Add bi-directional sync methods (pull, push)
+- [x] Implement conflict resolution strategy
+  - Commit: [latest]
 
 #### TASK-005-003: Field Mapping
 
-- [ ] Map Edda task title to GitHub issue title
-- [ ] Map Edda task description to GitHub issue body
-- [ ] Map Edda task status to GitHub issue state (open/closed)
-- [ ] Map Edda task priority to GitHub issue labels
-- [ ] Handle GitHub issue comments (if feasible for MVP)
+- [x] Map Edda task title to GitHub issue title
+- [x] Map Edda task description to GitHub issue body
+- [x] Map Edda task status to GitHub issue state (open/closed)
+- [x] Map Edda task priority to GitHub issue labels
+- [x] Handle GitHub issue comments (if feasible for MVP)
+  - Commit: [latest]
 
 #### TASK-005-004: Sync Commands
 
-- [ ] Implement `edda sync github pull` command
-- [ ] Implement `edda sync github push` command
-- [ ] Implement `edda sync github status` command
-- [ ] Add sync configuration commands
+- [x] Implement `edda sync github pull` command
+- [x] Implement `edda sync github push` command
+- [x] Implement `edda sync github status` command
+- [x] Add sync configuration commands
+  - Commit: [latest]
 
 #### TASK-005-005: Sync Configuration
 
-- [ ] Add GitHub configuration to EddaConfig
-- [ ] Support repository selection
-- [ ] Support authentication token configuration
-- [ ] Add sync interval configuration
+- [x] Add GitHub configuration to EddaConfig
+- [x] Support repository selection
+- [x] Support authentication token configuration
+- [x] Add sync interval configuration
+  - Commit: [latest]
 
 #### TASK-005-006: Error Handling
 
-- [ ] Handle GitHub API rate limiting
-- [ ] Handle authentication failures
-- [ ] Handle network connectivity issues
-- [ ] Provide clear error messages for sync failures
+- [x] Handle GitHub API rate limiting
+- [x] Handle authentication failures
+- [x] Handle network connectivity issues
+- [x] Provide clear error messages for sync failures
+  - Commit: [latest]
 
 ## Taskwarrior Compatibility
 

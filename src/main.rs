@@ -1,15 +1,14 @@
 mod cli;
 mod core;
-mod handlers;
 mod storage;
 mod sync;
 
-use cli::{
+use edda::cli::{
     Commands, ConfigCommands, DocCommands, GitHubSyncCommands, StateCommands, SyncCommands,
     SystemCommands, TaskCommands, init_app,
 };
-use core::{EddaConfig, EddaResult};
-use handlers::{
+use edda::core::{EddaConfig, EddaResult};
+use edda::handlers::{
     handle_doc_commands, handle_github_sync_commands, handle_query_command, handle_state_commands,
     handle_sync_commands, handle_system_commands, handle_task_commands,
 };

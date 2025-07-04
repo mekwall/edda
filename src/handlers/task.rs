@@ -4,6 +4,19 @@ use crate::storage::SqliteTaskStorage;
 use std::path::PathBuf;
 use std::str::FromStr;
 
+/// Create a task engine instance for the given configuration
+pub async fn create_task_engine(config: &EddaConfig) -> EddaResult<TaskEngine> {
+    let db_path = if config.database.url.starts_with("sqlite:") {
+        PathBuf::from(config.database.url.trim_start_matches("sqlite:"))
+    } else {
+        config.data_dir.join("edda.db")
+    };
+
+    let pool = crate::storage::get_pool(db_path).await?;
+    let storage = SqliteTaskStorage::new(pool);
+    Ok(TaskEngine::new(Box::new(storage)))
+}
+
 pub async fn handle_task_commands(
     subcommand: TaskCommands,
     config: &EddaConfig,

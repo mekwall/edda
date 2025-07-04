@@ -1,11 +1,10 @@
-data_dir = "./edda.db"
-log_level = "trace"
-output_format = "json"
+data_dir = 'C:\Users\mekwall\AppData\Roaming\edda'
+log_level = "info"
+output_format = "text"
 
 [github]
-repository = "test/repo"
-sync_interval = 600
+sync_interval = 300
 
 [database]
-url = "sqlite:test.db"
-max_connections = 10
+url = "sqlite:./.cursor/edda.db"
+max_connections = 5
