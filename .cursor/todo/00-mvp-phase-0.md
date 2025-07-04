@@ -126,14 +126,16 @@ MVP Phase 0 focuses on simple task management and GitHub sync to enable internal
 - [x] Implement `edda task <id> stop` command (Taskwarrior: `task <id> stop`)
 - [x] Implement `edda task <id> annotate <note>` command (Taskwarrior: `task <id> annotate`)
 - [x] Implement `edda task <id> +tag` and `edda task <id> -tag` commands
-  - Commit: <pending-commit-hash>
+  - Commit: 08a1b02
 
 #### TASK-002-005: Task Output Formatting
 
-- [ ] Implement text output format for human readability
-- [ ] Implement JSON output format for automation
-- [ ] Add basic table formatting for task lists
-- [ ] Support --format flag for output selection
+- [x] Implement text output format for human readability
+- [x] Implement JSON output format for automation
+- [x] Add basic table formatting for task lists
+- [x] Support --format flag for output selection
+  - Commit: <pending-commit-hash>
+  - Note: Both text and JSON output are supported for task list and get commands.
 
 #### TASK-002-006: Task Validation
 

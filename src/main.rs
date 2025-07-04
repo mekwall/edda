@@ -22,7 +22,15 @@ async fn main() {
 
     // Handle commands
     let result = match cli.command {
-        Some(Commands::Task { subcommand }) => handle_task_commands(subcommand, &config).await,
+        Some(Commands::Task { subcommand }) => {
+            handle_task_commands(
+                subcommand,
+                &config,
+                cli.format.as_deref().unwrap_or("text"),
+                cli.quiet,
+            )
+            .await
+        }
         Some(Commands::Doc { subcommand }) => handle_doc_commands(subcommand).await,
         Some(Commands::State { subcommand }) => handle_state_commands(subcommand).await,
         Some(Commands::Query { query }) => handle_query_command(query).await,
@@ -42,7 +50,12 @@ async fn main() {
     }
 }
 
-async fn handle_task_commands(subcommand: TaskCommands, config: &EddaConfig) -> EddaResult<()> {
+async fn handle_task_commands(
+    subcommand: TaskCommands,
+    config: &EddaConfig,
+    format: &str,
+    quiet: bool,
+) -> EddaResult<()> {
     // Initialize storage and task engine
     let db_path = if config.database.url.starts_with("sqlite:") {
         PathBuf::from(config.database.url.trim_start_matches("sqlite:"))
@@ -65,20 +78,43 @@ async fn handle_task_commands(subcommand: TaskCommands, config: &EddaConfig) -> 
             Ok(())
         }
         TaskCommands::List { query: _ } => {
-            // For now, just list all tasks without filtering
             let tasks = task_engine.list_tasks(None).await?;
 
             if tasks.is_empty() {
-                println!("No tasks found.");
-            } else {
-                println!("Tasks:");
-                for task in tasks {
+                if !quiet {
+                    println!("No tasks found.");
+                }
+                return Ok(());
+            }
+
+            match format {
+                "json" => {
+                    let json = serde_json::json!({
+                        "tasks": tasks,
+                        "meta": {
+                            "total": tasks.len(),
+                            "pending": tasks.iter().filter(|t| t.status == TaskStatus::Pending).count(),
+                            "completed": tasks.iter().filter(|t| t.status == TaskStatus::Completed).count(),
+                        }
+                    });
+                    println!("{}", serde_json::to_string_pretty(&json).unwrap());
+                }
+                _ => {
+                    // Text table output
                     println!(
-                        "  {}: {} [{}]",
-                        task.id.unwrap_or(0),
-                        task.description,
-                        task.status
+                        "{:<4} {:<30} {:<10} {:<20} {:<20}",
+                        "ID", "Description", "Status", "Created", "Modified"
                     );
+                    for task in tasks {
+                        println!(
+                            "{:<4} {:<30} {:<10} {:<20} {:<20}",
+                            task.id.unwrap_or(0),
+                            task.description.chars().take(30).collect::<String>(),
+                            task.status,
+                            task.entry_date.format("%Y-%m-%d %H:%M"),
+                            task.modified_date.format("%Y-%m-%d %H:%M")
+                        );
+                    }
                 }
             }
             Ok(())
@@ -92,34 +128,41 @@ async fn handle_task_commands(subcommand: TaskCommands, config: &EddaConfig) -> 
             let task = task_engine.get_task(task_id).await?;
 
             match task {
-                Some(task) => {
-                    println!("Task {}: {}", task.id.unwrap_or(0), task.description);
-                    println!("  Status: {}", task.status);
-                    println!(
-                        "  Priority: {}",
-                        task.priority
-                            .as_ref()
-                            .map(|p| p.to_string())
-                            .unwrap_or_else(|| "None".to_string())
-                    );
-                    println!("  Project: {}", task.project.as_deref().unwrap_or("None"));
-                    println!(
-                        "  Tags: {}",
-                        if task.tags.is_empty() {
-                            "None".to_string()
-                        } else {
-                            task.tags
-                                .iter()
-                                .map(|t| format!("+{t}"))
-                                .collect::<Vec<_>>()
-                                .join(" ")
-                        }
-                    );
-                    println!("  Created: {}", task.entry_date);
-                    println!("  Modified: {}", task.modified_date);
-                }
+                Some(task) => match format {
+                    "json" => {
+                        println!("{}", serde_json::to_string_pretty(&task).unwrap());
+                    }
+                    _ => {
+                        println!("Task {}: {}", task.id.unwrap_or(0), task.description);
+                        println!("  Status: {}", task.status);
+                        println!(
+                            "  Priority: {}",
+                            task.priority
+                                .as_ref()
+                                .map(|p| p.to_string())
+                                .unwrap_or_else(|| "None".to_string())
+                        );
+                        println!("  Project: {}", task.project.as_deref().unwrap_or("None"));
+                        println!(
+                            "  Tags: {}",
+                            if task.tags.is_empty() {
+                                "None".to_string()
+                            } else {
+                                task.tags
+                                    .iter()
+                                    .map(|t| format!("+{t}"))
+                                    .collect::<Vec<_>>()
+                                    .join(" ")
+                            }
+                        );
+                        println!("  Created: {}", task.entry_date);
+                        println!("  Modified: {}", task.modified_date);
+                    }
+                },
                 None => {
-                    println!("Task {task_id} not found.");
+                    if !quiet {
+                        println!("Task {task_id} not found.");
+                    }
                 }
             }
             Ok(())
