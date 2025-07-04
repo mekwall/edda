@@ -37,23 +37,25 @@ MVP Phase 0 focuses on simple task management and GitHub sync to enable internal
 - [x] Add uuid for unique identifiers
 - [x] Add anyhow for error handling
 - [x] Add tracing for logging
-  - Commit: <hash>
+  - Commit: b0343aa
 
 #### TASK-001-003: Project Structure
 
-- [ ] Create src/ directory structure
-- [ ] Set up module organization (cli, core, storage, sync)
-- [ ] Create basic error types
-- [ ] Set up configuration management
-- [ ] Create basic logging setup
+- [x] Create src/ directory structure
+- [x] Set up module organization (cli, core, storage, sync)
+- [x] Create basic error types
+- [x] Set up configuration management
+- [x] Create basic logging setup
+  - Commit: <hash>
 
 #### TASK-001-004: Basic CLI Framework
 
-- [ ] Set up clap command structure
-- [ ] Implement basic help system
-- [ ] Add global options (--config, --data-dir, --format, --quiet, --verbose)
-- [ ] Create placeholder for task subcommands
-- [ ] Add basic error handling and exit codes
+- [x] Set up clap command structure
+- [x] Implement basic help system
+- [x] Add global options (--config, --data-dir, --format, --quiet, --verbose)
+- [x] Create placeholder for task subcommands
+- [x] Add basic error handling and exit codes
+  - Commit: <hash>
 
 #### TASK-001-005: Configuration System
 
