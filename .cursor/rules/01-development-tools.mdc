@@ -1,0 +1,152 @@
+---
+description: Development tools and local development environment standards for Rust CLI development, IDE configurations, and local tooling
+globs: .pre-commit-config.yaml, rust-toolchain.toml, rust-toolchain, .cargo/config.toml, .cargo/config, Cargo.toml, Cargo.lock, target/
+---
+
+# Development Tools & Local Environment Standards
+
+Define and enforce standards for local development tools, IDE configurations, and development environment setup for Rust CLI development.
+
+## ✅ Requirements
+
+### **Pre-commit Hooks**
+
+- **Code Quality Enforcement**:
+
+  - Configure pre-commit hooks for automatic code quality checks
+  - Run formatting checks before commits
+  - Execute linting and security checks
+  - Validate YAML and configuration files
+  - Prevent large file commits
+
+- **Hook Configuration**:
+  - Use pre-commit framework for hook management
+  - Configure hooks for Rust files
+  - Set up automatic formatting with cargo fmt
+  - Run clippy checks before commits
+  - Validate Cargo.toml syntax
+
+### **Rust Development Tools**
+
+- **Toolchain Management**:
+
+  - Use rust-toolchain.toml for consistent toolchain versions
+  - Pin Rust version for reproducible builds
+  - Configure rustup for toolchain management
+  - Set up rust-analyzer for IDE integration
+  - Configure cargo for optimal local development
+  - Ensure Rust 2024 edition compatibility
+
+- **Cargo Configuration**:
+
+  - Use .cargo/config.toml for project-specific settings
+  - Configure build targets and features
+  - Set up cargo profiles for development vs release
+  - Configure cargo registry settings
+  - Optimize cargo caching for local builds
+  - Set edition = "2024" in Cargo.toml
+
+- **Development Dependencies**:
+  - Use appropriate dev-dependencies for testing
+  - Configure test frameworks and mocking tools
+  - Set up benchmarking tools for performance testing
+  - Configure documentation generation tools
+  - Use cargo-watch for development iteration
+
+### **CLI Development Tools**
+
+- **CLI Framework**:
+
+  - Use clap for command-line argument parsing
+  - Configure clap for optimal user experience
+  - Set up command completion generation
+  - Configure help text and documentation
+  - Use clap-derive for type-safe argument parsing
+
+- **CLI Testing**:
+
+  - Use assert_cmd for CLI testing
+  - Configure test fixtures and sample data
+  - Set up integration tests for CLI commands
+  - Configure test coverage for CLI functionality
+  - Use tempfile for temporary file testing
+
+- **CLI Documentation**:
+
+  - Use clap_mangen for man page generation
+  - Configure help text and usage examples
+  - Set up shell completion scripts
+  - Generate documentation from code comments
+  - Use clap_complete for completion generation
+
+### **IDE and Editor Configuration**
+
+- **Editor Settings**:
+
+  - Configure editor settings for consistent formatting
+  - Set up language-specific configurations
+  - Configure debugging and testing integrations
+  - Set up code completion and IntelliSense
+  - Configure version control integration
+
+- **Project Configuration**:
+  - Use .editorconfig for consistent editor settings
+  - Configure workspace settings for the project
+  - Set up task runners and build tools
+  - Configure debugging configurations
+  - Set up integrated terminal settings
+
+### **Local Development Environment**
+
+- **Environment Setup**:
+
+  - Document development environment requirements
+  - Provide setup scripts for new developers
+  - Configure environment variables for local development
+  - Set up local databases and services if needed
+  - Configure local networking for development
+
+- **Build and Test Tools**:
+  - Configure local build tools and scripts
+  - Set up local testing frameworks
+  - Configure local linting and formatting tools
+  - Set up local security scanning tools
+  - Configure local performance testing tools
+
+### **Development Workflow Tools**
+
+- **Code Generation**:
+
+  - Configure code generation tools
+  - Set up template engines for boilerplate
+  - Configure scaffolding tools
+  - Set up documentation generation
+  - Configure CLI command generation
+
+- **Testing Tools**:
+  - Configure unit testing frameworks
+  - Set up integration testing tools
+  - Configure end-to-end testing tools
+  - Set up test data management
+  - Configure test coverage tools
+
+### **Performance and Monitoring**
+
+- **Local Performance Tools**:
+
+  - Configure local profiling tools
+  - Set up performance benchmarking
+  - Configure memory leak detection
+  - Set up local monitoring tools
+  - Configure performance regression testing
+
+- **Debugging Tools**:
+  - Configure debugging tools and configurations
+  - Set up logging and tracing tools
+  - Configure error reporting tools
+  - Set up local error monitoring
+  - Configure debugging workflows
+
+## 📌 Reference
+
+This rule inherits shared context from: `./.cursor/rules/00-core.mdc`

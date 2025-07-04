@@ -1,0 +1,221 @@
+---
+description: Brief description of when this rule applies
+globs: pattern1, pattern2, pattern3
+alwaysApply: false
+---
+
+# MDC File Format Guide
+
+MDC (Markdown Configuration) files are used by Cursor to provide context-specific instructions to AI assistants. This guide explains how to create and maintain these files properly.
+
+## ⚠️ CRITICAL: Frontmatter is MANDATORY
+
+**Every MDC file MUST begin with frontmatter.** Without proper frontmatter, the AI assistant will not recognize the file as a rule and will not apply it. This is the most common cause of rules not working.
+
+## File Structure
+
+Each MDC file consists of two main parts:
+
+1. **Frontmatter** - Configuration metadata at the top of the file (MANDATORY)
+2. **Markdown Content** - The actual instructions in Markdown format
+
+### Frontmatter (REQUIRED)
+
+**The frontmatter MUST be the very first thing in the file** and MUST be enclosed between triple-dash lines (`---`).
+
+#### ❌ Common Frontmatter Mistakes
+
+- **Missing frontmatter entirely** - Rule will not be recognized by AI
+- **Frontmatter not at the very top** - Must come before any other content
+- **Incorrect field names** - Use `description`, `globs`, `alwaysApply` (not `title`)
+- **Missing closing `---`** - Frontmatter must be properly closed
+- **Empty globs with `alwaysApply: false`** - Rule will never be applied
+
+#### ✅ Correct Frontmatter Format
+
+```yaml
+---
+description: Use when user asks to create or update Cursor rules files
+globs: .cursor/rules/*.mdc
+alwaysApply: false
+---
+```
+
+#### Required Fields
+
+- **description** (REQUIRED): Agent-friendly description of when the rule is relevant. Format as `<topic>: <details>` for best results.
+- **globs** (REQUIRED unless alwaysApply: true): Comma-separated list of file patterns where this rule applies
+- **alwaysApply** (REQUIRED): Set to `true` only for truly global guidelines that apply to all files
+
+#### Guidelines for Setting Fields
+
+- **description**: Should be agent-friendly and clearly describe when the rule is relevant. Format as `<topic>: <details>` for best results.
+- **globs**:
+  - Must be a comma-separated list on a single line
+  - If a rule is only relevant in very specific situations, leave globs empty so it's loaded only when applicable to the user request.
+  - If the only glob would match all files (like `**/*`), leave it empty and set `alwaysApply: true` instead.
+  - Otherwise, be as specific as possible with glob patterns to ensure rules are only applied with relevant files.
+  - Use patterns like `**/*.rs, **/*.dart, .github/**/*.yml` for multiple file types
+  - When `alwaysApply: true` is set, globs are not needed as the rule will be applied to every file and chat
+- **alwaysApply**: Use sparingly for truly global guidelines. When set to `true`, the rule applies to all files and conversations regardless of glob patterns.
+
+#### Glob Pattern Guidelines
+
+- Use specific patterns like `src/cli/**/*.rs` for all Rust files in the CLI directory
+- Use patterns like `src/commands/*.rs` for all command files
+- Avoid overly broad patterns that would apply rules inappropriately
+
+### Markdown Content
+
+After the frontmatter, the rest of the file should be valid Markdown with clear hierarchical structure using headings (H1, H2, H3, etc.).
+
+## Content Guidelines
+
+### **What MDC Files Should Contain**
+
+MDC files should contain **guidelines, musts, and workflow instructions** - not specifications, code examples, or project-specific details.
+
+#### ✅ Appropriate Content
+
+- **Guidelines**: Best practices and recommendations
+- **Musts**: Required actions and non-negotiable requirements
+- **Workflow**: Step-by-step processes and procedures
+- **Standards**: Quality and consistency requirements
+- **Rules**: Specific constraints and limitations
+
+#### ❌ Inappropriate Content
+
+- **Specifications**: Detailed technical specifications belong in project specs
+- **Code Examples**: Implementation examples belong in documentation
+- **Configuration**: Specific config files belong in architecture docs
+- **Dependency Lists**: Explicit dependency lists belong in project specs
+- **Toolchain Configs**: Specific tool configurations belong in setup docs
+
+### **Content Structure Guidelines**
+
+- Use clear, actionable instructions
+- Organize content with hierarchical headings
+- Keep instructions focused and specific
+- Use emojis for section headers to improve readability (e.g., ✅, 📌, 🧠)
+- Focus on **what to do** and **how to do it**, not **what the project currently uses**
+
+## Special Features
+
+### File References
+
+You can reference other files from within an MDC file using the markdown link syntax. When this rule is activated, the referenced file will also be included in the context.
+
+## Logical Grouping System
+
+### Numbering Convention
+
+Use a hierarchical numbering system to organize rules logically:
+
+- **`00-` Core Infrastructure**: Shared context, core automation principles, and fundamental guidelines
+- **`01-` Development Environment**: Local development tools, IDE configuration, and development workflow
+- **`05-` Dependencies**: Package management, version control, and dependency hygiene
+- **`10-` Backend Components**: Rust engine, backend services, and server-side logic
+- **`11-` CLI Components**: Command-line interface, user interaction, and output formatting
+- **`12-` Platform-Specific**: Windows, macOS, and Linux platform considerations
+- **`15-` AI Integration**: AI agent communication, workflow management, and context handling
+- **`25-` Knowledge Management**: Documentation, learnings, and knowledge sharing
+- **`35-` Performance**: Optimization, benchmarking, and performance standards
+- **`50-` Automation**: CI/CD, deployment, and workflow automation
+- **`60-` Documentation**: Standards for documentation, APIs, and code comments
+- **`70-` Reliability**: Error handling, testing, and quality assurance
+- **`99-` Meta**: Format guidelines, rule management, and meta-documentation
+
+### Grouping Principles
+
+- **Related Functionality**: Group rules that address similar concerns or technologies
+- **Dependency Order**: Place foundational rules (like core) before dependent rules
+- **Discovery**: Use consistent prefixes to make related rules easy to find
+- **Scalability**: Leave gaps in numbering for future rule additions
+- **Hierarchy**: Use subdirectories for specialized rule collections (e.g., `tasks/`)
+
+### Rule Relationships
+
+- **Cross-References**: Use the reference section to link related rules
+- **Inheritance**: Rules should inherit from core rules when appropriate
+- **Specialization**: Create specific rules that build upon general ones
+- **Avoid Duplication**: Reference existing rules instead of duplicating content
+- **Consistency**: Maintain consistent patterns across related rule groups
+
+## Best Practices
+
+1. **Logical Grouping and Organization**
+
+   - Follow the established numbering convention for consistency
+   - Group related rules with similar prefixes for easy discovery
+   - Place task-specific rules in the `tasks/` subdirectory
+   - Use descriptive filenames that indicate the rule's purpose
+
+2. **Frontmatter Specificity**
+
+   - Be specific with glob patterns to ensure rules are only applied in relevant contexts
+   - Use `alwaysApply: true` for truly global guidelines
+   - Make descriptions clear and concise so AI knows when to apply the rule
+
+3. **Content Structure**
+
+   - Start with a clear title (H1)
+   - Use hierarchical headings (H2, H3, etc.) to organize content
+   - Keep instructions clear and actionable
+   - Use emojis for section headers to improve readability
+
+4. **File Size Considerations**
+
+   - Keep files focused on a single topic or closely related topics
+   - Split very large rule sets into multiple files and link them with references
+   - Aim for under 300 lines per file when possible
+
+5. **Reference Consistency**
+
+   - Always include a reference section pointing to the core rule: `./00-core.mdc`
+   - Use consistent formatting for references
+   - Avoid duplicate reference sections
+
+6. **Project-Specific Patterns**
+   - For Rust CLI projects, include specific patterns for CLI testing, and tooling
+   - Reference actual project structure in glob patterns
+   - Include guidelines relevant to the project's technology stack
+
+## Usage in Cursor
+
+When working with files in Cursor, rules are automatically applied when:
+
+1. The file you're working on matches a rule's glob pattern
+2. A rule has `alwaysApply: true` set in its frontmatter
+3. The agent thinks the rule's description matches the user request
+4. You explicitly reference a rule in a conversation with Cursor's AI
+
+## Creating/Renaming/Removing Rules
+
+- When a rule file is added/renamed/removed, update also the list under `00-core.mdc` if it's a required context file.
+- When changes are made to multiple `mdc` files from a single request, review also this file to consider whether to update it too.
+
+## Updating Rules
+
+When updating existing rules:
+
+1. Maintain the frontmatter format
+2. Keep the same glob patterns unless intentionally changing the rule's scope
+3. Update the description if the purpose of the rule changes
+4. Consider whether changes should propagate to related rules
+5. Ensure file paths in references are correct and relative to the `.cursor` directory
+6. Remove any duplicate content or reference sections
+
+## Common Issues to Avoid
+
+1. **Incorrect file paths**: Use `.cursor/` prefix for files in the `.cursor` directory
+2. **Duplicate reference sections**: Each rule should have exactly one reference section
+3. **Missing frontmatter**: All rules must have frontmatter at the top
+4. **Inconsistent file extensions**: Use `.mdc` consistently in references
+5. **Overly broad glob patterns**: Be specific to avoid applying rules inappropriately
+6. **Code examples in rules**: Rules should contain guidelines and requirements, not code examples
+7. **Specifications in rules**: Technical specifications belong in project specs, not rules
+8. **Dependency lists in rules**: Explicit dependency lists belong in project specs
+
+## 📌 Reference
+
+This rule inherits shared context from: `./.cursor/rules/00-core.mdc`

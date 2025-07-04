@@ -1,0 +1,195 @@
+---
+description: Platform-specific considerations and patterns for Windows, macOS, and Linux CLI development
+globs: "**/*.rs"
+---
+
+# Platform-Specific Standards
+
+Handle platform differences for Windows, macOS, and Linux in CLI applications.
+
+---
+
+## ✅ Requirements
+
+### **Windows-Specific Considerations**
+
+- **File System**:
+
+  - Use Windows path separators (`\`)
+  - Handle long file paths (UNC paths)
+  - Consider Windows file locking behavior
+  - Handle case-insensitive file systems
+
+- **Console and Terminal**:
+
+  - Use Windows Console API for terminal operations
+  - Handle ANSI escape codes for colors and formatting
+  - Support both cmd.exe and PowerShell
+  - Handle different code pages and character encoding
+
+- **Registry and Configuration**:
+
+  - Use Windows Registry for persistent configuration
+  - Handle user-specific vs system-wide settings
+  - Implement proper registry cleanup on uninstall
+
+- **Process Management**:
+  - Handle Windows process creation and termination
+  - Use Windows-specific signal handling
+  - Implement proper cleanup for child processes
+
+### **macOS-Specific Considerations**
+
+- **File System**:
+
+  - Use POSIX path separators (`/`)
+  - Handle case-sensitive file systems
+  - Respect macOS file permissions and ACLs
+  - Handle .DS_Store files and other macOS metadata
+
+- **Terminal and Console**:
+
+  - Use ANSI escape codes for terminal formatting
+  - Support iTerm2 and Terminal.app features
+  - Handle different shell environments (bash, zsh)
+  - Support macOS-specific terminal features
+
+- **Configuration Management**:
+
+  - Use plist files for configuration
+  - Handle user preferences in ~/Library/Preferences
+  - Implement proper app bundle structure
+  - Support macOS sandboxing if applicable
+
+- **Security**:
+  - Handle macOS security permissions
+  - Implement proper code signing and notarization
+  - Respect macOS privacy and security policies
+  - Handle sandbox restrictions if applicable
+
+### **Linux-Specific Considerations**
+
+- **File System**:
+
+  - Use POSIX path separators (`/`)
+  - Handle case-sensitive file systems
+  - Respect Linux file permissions and ownership
+  - Handle different filesystem types (ext4, btrfs, etc.)
+
+- **Terminal and Console**:
+
+  - Use ANSI escape codes for terminal formatting
+  - Support various terminal emulators (xterm, gnome-terminal, etc.)
+  - Handle different shell environments (bash, zsh, fish)
+  - Support Linux-specific terminal features
+
+- **Package Management**:
+  - Handle different package managers (apt, yum, pacman)
+  - Manage dependencies for different distributions
+  - Consider AppImage or Flatpak packaging
+  - Handle distribution-specific paths and conventions
+
+### **Cross-Platform Patterns**
+
+- **Feature Detection**:
+
+  - Use `cfg` attributes for platform-specific code
+  - Keep platform-specific code in separate modules
+  - Provide consistent interfaces across platforms
+  - Use conditional compilation for platform differences
+
+- **Conditional Compilation**:
+
+  - Use `cfg` attributes for platform-specific code
+  - Keep platform-specific code in separate modules
+  - Provide consistent interfaces across platforms
+
+- **Error Handling**:
+  - Map platform-specific errors to common error types
+  - Provide meaningful error messages for each platform
+  - Handle platform-specific failure modes
+
+### **Path Handling**
+
+- **Cross-Platform Paths**:
+
+  - Use PathBuf for cross-platform path handling
+  - Handle path separators automatically
+  - Use appropriate path joining methods
+  - Consider platform-specific path conventions
+
+- **Home Directory**:
+
+  - Use appropriate home directory detection
+  - Handle platform-specific home directory locations
+  - Consider user-specific vs system-wide paths
+  - Handle cases where home directory is not available
+
+### **Terminal and Console**
+
+- **Cross-Platform Terminal**:
+
+  - Use cross-platform terminal libraries
+  - Handle terminal capabilities detection
+  - Support color output across platforms
+  - Handle terminal size and cursor positioning
+
+- **Color Support**:
+
+  - Use cross-platform color libraries
+  - Detect terminal color support
+  - Provide fallbacks for non-color terminals
+  - Handle different color schemes
+
+### **Configuration Management**
+
+- **Platform-Specific Config**:
+
+  - Use appropriate configuration directories for each platform
+  - Handle platform-specific configuration formats
+  - Consider user vs system configuration
+  - Implement proper configuration migration
+
+### **Testing Requirements**
+
+- **Platform Testing**:
+
+  - Test on all target platforms before release
+  - Use CI/CD to test on multiple platforms
+  - Test with different terminal emulators
+  - Test with different shell environments
+
+- **Virtualization**:
+  - Use VMs for testing different Linux distributions
+  - Test on different macOS versions
+  - Test on different Windows versions
+  - Test with different terminal configurations
+
+### **Common Platform Issues**
+
+- **Line Endings**:
+
+  - Handle different line ending conventions
+  - Use appropriate text processing libraries
+  - Consider platform-specific text encoding
+  - Handle binary vs text file detection
+
+- **Character Encoding**:
+
+  - Use UTF-8 encoding consistently
+  - Handle platform-specific encoding issues
+  - Provide proper error handling for encoding problems
+  - Consider locale-specific encoding requirements
+
+- **File Permissions**:
+
+  - Handle platform-specific permission models
+  - Implement proper permission checking
+  - Consider security implications of file operations
+  - Handle permission errors gracefully
+
+---
+
+## 📌 Reference
+
+This rule inherits shared context from: `./.cursor/rules/00-core.mdc`

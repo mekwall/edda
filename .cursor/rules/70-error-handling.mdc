@@ -1,0 +1,115 @@
+---
+description: Error handling standards for Rust CLI applications
+globs: "**/*.rs"
+---
+
+# Error Handling Standards
+
+Ensure consistent, informative error handling across Rust CLI applications.
+
+---
+
+## ✅ Requirements
+
+### **Rust Error Handling**
+
+- **Use `thiserror` for custom errors**:
+
+  - Define custom error types using thiserror derive macro
+  - Include meaningful error messages with context
+  - Provide source error information when wrapping errors
+  - Use appropriate error variants for different failure modes
+
+- **Error Propagation**:
+
+  - Use `?` operator for error propagation
+  - Provide context with `map_err` when converting errors
+  - Don't ignore errors with `unwrap()` in production code
+  - Handle errors at appropriate boundaries
+
+- **CLI Error Handling**:
+  - Convert Rust errors to user-friendly messages
+  - Provide meaningful error messages for debugging
+  - Handle command-line argument validation errors
+  - Implement proper error reporting for CLI users
+
+### **CLI Error Display**
+
+- **User-Friendly Error Messages**:
+
+  - Display clear, actionable error messages
+  - Use color coding for different error types
+  - Provide hints for error recovery
+  - Include relevant context in error messages
+
+- **Error Recovery**:
+  - Show user-friendly error messages
+  - Provide actionable error recovery options
+  - Log detailed errors for debugging
+  - Implement graceful degradation where possible
+
+### **CLI Error Boundaries**
+
+- **Error Conversion**:
+
+  - Convert internal errors to user-friendly CLI errors
+  - Maintain appropriate exit codes for different error types
+  - Provide structured error information for programmatic use
+  - Handle errors consistently across all CLI commands
+
+- **Input Validation**:
+  - Always validate CLI parameters
+  - Handle invalid input gracefully
+  - Implement proper error reporting
+  - Provide helpful error messages for validation failures
+
+### **Error Recovery Strategies**
+
+- **Graceful Degradation**:
+
+  - Provide fallback options when features fail
+  - Continue operation with reduced functionality
+  - Inform users about limitations
+  - Implement proper error recovery mechanisms
+
+- **Retry Logic**:
+  - Implement exponential backoff for transient errors
+  - Limit retry attempts to prevent infinite loops
+  - Distinguish between retryable and fatal errors
+  - Provide appropriate timeout mechanisms
+
+### **Logging and Monitoring**
+
+- **Error Logging**:
+
+  - Log errors with appropriate detail levels
+  - Include context information in error logs
+  - Use structured logging for error tracking
+  - Implement proper error categorization
+
+- **Error Metrics**:
+  - Track error rates and types
+  - Monitor CLI error frequency
+  - Alert on critical error patterns
+  - Implement error reporting for debugging
+
+### **Testing Error Conditions**
+
+- **Error Testing**:
+
+  - Test all error conditions and edge cases
+  - Verify error messages are appropriate
+  - Test error recovery mechanisms
+  - Validate error handling behavior
+
+- **CLI Error Testing**:
+  - Test invalid argument handling
+  - Test error code conversion
+  - Test error message formatting
+  - Test error recovery workflows
+
+---
+
+## 📌 Reference
+
+This rule inherits shared context from: `./.cursor/rules/00-core.mdc`

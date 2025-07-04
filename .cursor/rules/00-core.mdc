@@ -1,0 +1,45 @@
+---
+description: Core Cursor Automation Rules
+alwaysApply: true
+---
+
+# Core Cursor Automation Rules
+
+This document defines the core automation principles and shared context that all agents and scoped rules should inherit.
+
+---
+
+## 🧠 Shared Global Assumptions
+
+- The agent must **always read** all files in `.cursor/spec*` and `.cursor/learnings*` **before applying changes**.
+- The agent must only work on **one task at a time**.
+- The agent must work as autonomously as possible. If stuck, the agent should add a TODO comment and track it as a todo task to be done at later time.
+- The agent must not ask for confirmation or ask questions unless interrupted.
+- The next task is defined by the **top unchecked item** in the markdown files in `.cursor/todo/`.
+- Once a task is completed, it must be **marked `[x]` in the appropriate `.cursor/todo/*.md` file**, and the commit hash or message must be referenced inline.
+- **Every change must result in a passing project state** (i.e., it builds and passes all tests) and must be followed by an **atomic commit**.
+- **Document learnings** when encountering complex issues, especially CLI design, performance, or AI agent integration problems.
+- Other rules may refer to this document for shared context instead of repeating it.
+
+---
+
+## 📚 Required Context
+
+Read the following files before beginning any task:
+
+### Spec
+
+- `.cursor/spec/SPEC_OVERVIEW.md`
+- `.cursor/spec/SPEC_ARCHITECTURE.md`
+- `.cursor/spec/SPEC_CLI_DESIGN.md`
+
+### Learnings
+
+- `.cursor/learnings/README.md`
+- `.cursor/learnings/RUST_LEARNINGS.md`
+- `.cursor/learnings/CLI_LEARNINGS.md`
+- `.cursor/learnings/AI_AGENT_LEARNINGS.md`
+- `.cursor/learnings/PROJECT_LEARNINGS.md`
+- `.cursor/learnings/WINDOWS_LEARNINGS.md`
+- `.cursor/learnings/MACOS_LEARNINGS.md`
+- `.cursor/learnings/LINUX_LEARNINGS.md`

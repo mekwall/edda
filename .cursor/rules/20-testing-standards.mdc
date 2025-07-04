@@ -1,0 +1,57 @@
+---
+description: Testing rules for Rust CLI development
+globs: "**/*.rs"
+---
+
+# Testing Requirements
+
+All Rust CLI code must be tested before commit. This applies to command modules, data processing, and CLI interfaces.
+
+---
+
+## ✅ Requirements
+
+- Every commit must pass:
+
+  - `cargo test`
+  - `cargo clippy -- -D warnings`
+  - `cargo fmt --check`
+
+- New features must be accompanied by:
+
+  - Unit tests for individual functions and modules
+  - Integration tests for complete command workflows
+  - Tests should cover both happy path and error cases
+
+- CLI interfaces must include:
+
+  - Command-line argument parsing tests
+  - Output format validation tests
+  - Error handling tests for invalid inputs
+  - Integration tests with real file system operations
+
+- Test names must:
+
+  - Clearly describe the expected behavior
+  - Include input cases and relevant edge conditions
+  - Follow the pattern: `test_<function_name>_<scenario>`
+
+- Rust testing patterns:
+
+  - Use `#[cfg(test)]` modules for unit tests
+  - Use `#[tokio::test]` for async tests
+  - Mock external dependencies using `mockall` or similar
+  - Use `assert_cmd` for CLI testing
+  - Use `tempfile` for temporary file testing
+
+- CLI testing patterns:
+  - Use `assert_cmd::Command` for command execution tests
+  - Test output formats (text, JSON, YAML)
+  - Test error conditions and exit codes
+  - Test with different input scenarios
+
+---
+
+## 📌 Reference
+
+This rule inherits shared context from: `./.cursor/rules/00-core.mdc`

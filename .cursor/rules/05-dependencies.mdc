@@ -1,0 +1,63 @@
+---
+description: Guidelines for managing dependencies in Rust CLI projects.
+globs: Cargo.toml, Cargo.lock, rust-toolchain.toml
+---
+
+# Dependency Management Guidelines
+
+Establish best practices and workflow for managing dependencies in Rust CLI projects.
+
+---
+
+## ✅ Guidelines
+
+### **General Principles**
+
+- Prefer stable, well-maintained crates with active development.
+- Review documentation and community adoption before adding a new dependency.
+- Minimize the number of dependencies to reduce build times and attack surface.
+- Use optional and feature-gated dependencies for non-essential functionality.
+- Regularly update dependencies to benefit from security and performance improvements.
+- Pin major versions for stability; allow patch/minor updates for security.
+- Remove unused dependencies promptly.
+
+### **Workflow**
+
+- Use `cargo add <crate>` (from `cargo-edit`) to add dependencies, specifying version constraints as needed.
+- Use `cargo upgrade` to update dependencies, and review changelogs for breaking changes.
+- Run `cargo outdated` monthly to check for outdated dependencies.
+- Run `cargo audit` weekly to check for security vulnerabilities.
+- Use `cargo tree` to review the dependency graph and spot unnecessary or duplicate dependencies.
+- Check license compliance for all dependencies before adding them.
+- Document rationale for adding new dependencies in PRs.
+
+### **Development Tools**
+
+- Use `clippy` for linting and `rustfmt` for formatting.
+- Use `cargo-audit` for security auditing.
+- Use `cargo-tarpaulin` for code coverage.
+- Use `cargo-readme` to generate README documentation from doc comments (optional).
+
+### **Security**
+
+- Run security checks (`cargo audit`) in CI and before releases.
+- Monitor for vulnerabilities and respond promptly to advisories.
+- Prefer crates with a good security track record and regular updates.
+
+### **Performance**
+
+- Consider the impact of dependencies on compile time and binary size.
+- Use only necessary features of each crate (disable default features if not needed).
+- Benchmark and profile if adding a dependency for performance-critical code.
+
+### **Version Management**
+
+- Follow semantic versioning for all dependencies.
+- Plan for breaking changes and provide migration paths when updating major versions.
+- Maintain backward compatibility where possible.
+
+---
+
+## 📌 Reference
+
+This rule inherits shared context from: `./.cursor/rules/00-core.mdc`

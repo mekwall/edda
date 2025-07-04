@@ -1,0 +1,85 @@
+---
+description: Code quality, readability, and correctness standards for Rust CLI development
+globs: **/*.rs, **/*.toml, **/*.yaml, **/*.yml
+---
+
+# Code Hygiene & Best Practices
+
+Maintain code quality, readability, and correctness across all Rust CLI files.
+
+## ✅ Requirements
+
+### **Documentation Standards**
+
+- All public-facing functions, types, and constants must be documented using `///` doc comments
+- Include parameter descriptions, return value explanations, and usage examples
+- Document error conditions and edge cases
+- Use consistent documentation formatting across the codebase
+
+### **Naming Conventions**
+
+- Use clear and expressive names that reveal intent
+- Avoid acronyms unless they are domain-specific and explained in comments
+- Follow Rust conventions:
+  - snake_case for variables and functions
+  - PascalCase for types and modules
+  - SCREAMING_SNAKE_CASE for constants
+- Use descriptive names for CLI commands and options
+
+### **Code Structure**
+
+- Split large functions into **small, testable units**
+- Keep functions focused on a single responsibility
+- Limit function complexity and nesting depth
+- Use early returns to reduce nesting and improve readability
+
+### **Error Handling**
+
+- Use `Result` types for fallible operations
+- Provide meaningful error messages
+- Use `thiserror` for custom error types
+- Handle errors gracefully with proper context
+- Validate inputs at function boundaries
+
+### **Code Comments**
+
+- Always comment **why** something is done when it isn't immediately obvious from the code structure
+- Avoid commenting **what** the code does (the code should be self-documenting)
+- Use comments to explain complex algorithms, business logic, or workarounds
+- Document CLI-specific considerations and user experience decisions
+
+### **Performance Considerations**
+
+- Avoid unnecessary allocations in performance-critical code
+- Use appropriate data structures for the task
+- Profile code before optimizing
+- Consider memory usage patterns in CLI operations
+- Use efficient serialization for data interchange
+
+### **Testing Standards**
+
+- Write unit tests for all public functions
+- Include integration tests for CLI commands
+- Test both success and error cases
+- Use meaningful test names that describe the scenario
+- Maintain high test coverage for critical code paths
+
+### **Security Best Practices**
+
+- Validate all inputs, especially from command line arguments
+- Use secure random number generation where needed
+- Avoid unsafe code unless absolutely necessary
+- Document security considerations in CLI code
+- Follow principle of least privilege
+
+### **Code Review Guidelines**
+
+- Review for correctness, performance, and security
+- Ensure proper error handling is implemented
+- Verify documentation is complete and accurate
+- Check for potential issues in CLI argument parsing
+- Validate that tests cover edge cases
+
+## 📌 Reference
+
+This rule inherits shared context from: `./.cursor/rules/00-core.mdc`

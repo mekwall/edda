@@ -1,0 +1,71 @@
+---
+description: Commit policies and semantic standards
+alwaysApply: true
+---
+
+# Conventional Commit Standards
+
+Ensure consistent, atomic commits with proper semantic formatting.
+
+---
+
+## ✅ Requirements
+
+- All commits must follow the **[Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/)** format:
+
+  - `feat:`, `fix:`, `refactor:`, `chore:`, `docs:`, `test:`, etc.
+
+- Each commit must:
+
+  - Be **atomic** (do one thing)
+  - Pass **all tests** (`cargo test`, `cargo clippy`, etc.)
+  - Have a **clear, descriptive message**
+
+- Commit message format:
+
+  ```
+  <type>[optional scope]: <description>
+
+  [optional body]
+
+  [optional footer(s)]
+  ```
+
+- Never commit:
+  - Partial features
+  - Broken code
+  - Speculative changes
+
+## CI Skip Guidelines
+
+- **Skip CI for appropriate changes** by adding skip keywords to commit messages:
+
+  - `[skip ci]` - Skip continuous integration workflows
+  - `[ci skip]` - Alternative skip keyword
+  - `[no ci]` - Skip all CI checks
+  - `[skip actions]` - Skip GitHub Actions workflows
+  - `[actions skip]` - Alternative actions skip keyword
+
+- **Use cases for skipping CI**:
+
+  - Documentation-only changes (README updates, comments)
+  - Minor formatting changes (whitespace, line endings)
+  - Dependency updates that don't affect functionality
+  - Configuration changes that don't require testing
+
+- **Alternative method**: Use `skip-checks: true` trailer in commit messages
+
+  - Add at the end of commit message with two empty lines before it
+  - Example: `git commit -m "docs: update README" -m "" -m "" -m "skip-checks: true"`
+
+- **Important notes**:
+  - Skip instructions only apply to `push` and `pull_request` events
+  - Skipped workflows show as "Pending" in pull request checks
+  - Pull requests requiring specific checks may be blocked from merging
+  - Use sparingly and only when CI is truly unnecessary
+
+---
+
+## 📌 Reference
+
+This rule inherits shared context from: `./.cursor/rules/00-core.mdc`

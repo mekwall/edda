@@ -1,0 +1,113 @@
+---
+description: Ensure comprehensive, clear documentation for Rust APIs, code comments, and inline documentation.
+globs: "**/*.rs", "**/*.toml"
+---
+
+# Code Documentation Standards
+
+Ensure comprehensive, clear documentation for Rust APIs, code comments, and inline documentation.
+
+---
+
+## ✅ Requirements
+
+### **Rust API Documentation**
+
+- **Public API Documentation**:
+
+  - Document all public functions, types, and constants using `///` doc comments
+  - Include parameter descriptions, return value explanations, and usage examples
+  - Document error conditions and edge cases
+  - Use consistent documentation formatting across the codebase
+  - Include examples for complex APIs
+
+- **Module Documentation**:
+
+  - Use `//!` for module-level documentation
+  - Describe the module's purpose and responsibilities
+  - Document module-level examples and usage patterns
+  - Explain module dependencies and relationships
+
+- **CLI Command Documentation**:
+
+  - Document all CLI commands and their parameters
+  - Include usage examples and common scenarios
+  - Document error conditions and exit codes
+  - Explain command behavior and side effects
+
+### **Code Comments**
+
+- **Complex Logic**:
+
+  - Comment on why something is done when it isn't immediately obvious
+  - Explain complex algorithms and business logic
+  - Document performance considerations and trade-offs
+  - Explain platform-specific behavior and workarounds
+
+- **Performance Considerations**:
+
+  - Document performance implications of design decisions
+  - Explain memory usage patterns and optimization strategies
+  - Document algorithmic complexity where relevant
+  - Explain caching strategies and data structure choices
+
+- **Platform-Specific Code**:
+
+  - Document platform-specific implementations and their reasons
+  - Explain conditional compilation logic
+  - Document platform-specific workarounds and limitations
+  - Link to platform-specific documentation and resources
+
+### **Documentation Standards**
+
+- **All Public APIs**: Document all public functions, types, and constants
+- **Examples**: Include usage examples for complex APIs
+- **Error Conditions**: Document all possible error conditions
+- **Edge Cases**: Document behavior for edge cases and unusual inputs
+- **Thread Safety**: Document thread safety guarantees where relevant
+
+### **Comment Guidelines**
+
+- **Why, Not What**: Comment on why something is done, not what it does
+- **Complex Logic**: Explain complex algorithms and business logic
+- **Workarounds**: Document workarounds and their reasons
+- **Platform Differences**: Explain platform-specific behavior
+- **Performance**: Document performance implications where relevant
+
+### **Documentation Generation**
+
+- **Generate Documentation**:
+
+  - Use `cargo doc` for generating documentation
+  - Ensure all public APIs are documented
+  - Include examples for complex APIs
+  - Document error conditions and edge cases
+  - Keep documentation up to date with code changes
+
+- **Documentation Coverage**:
+  - All public functions must be documented
+  - Include examples for complex APIs
+  - Document error conditions and edge cases
+  - Keep documentation up to date with code changes
+
+### **Type Documentation**
+
+- **Struct Documentation**:
+
+  - Document all struct fields and their purposes
+  - Explain the struct's role in the system
+  - Document any invariants or constraints
+  - Include usage examples for complex structs
+
+- **Enum Documentation**:
+
+  - Document all enum variants and their meanings
+  - Explain when each variant should be used
+  - Document any associated data and its purpose
+  - Include examples of enum usage patterns
+
+---
+
+## 📌 Reference
+
+This rule inherits shared context from: `./.cursor/rules/00-core.mdc`

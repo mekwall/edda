@@ -1,0 +1,8 @@
+# Ignore build output
+target/
+
+# Cursor-specific
+.cursor/cache/
+.cursor/snapshots/
+.cursor/history/
+.cursor/agent_logs/

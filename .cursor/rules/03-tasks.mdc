@@ -1,0 +1,80 @@
+---
+description: Task management standards
+globs: ["./cursor/todo/*.md"]
+alwaysApply: true
+---
+
+# Markdown Task Management Standards
+
+Define how tasks are managed using markdown documents in `.cursor/todo/`.
+
+---
+
+## ✅ Requirements
+
+### Task Management
+
+- **Task Creation**: Add new tasks to appropriate markdown files in `.cursor/todo/` using checkbox format `- [ ] **TASK-ID**: <description>`
+- **Agent Task Addition**: The agent should freely add new tasks when identifying issues, ideas, or new features during development
+- **Task Prioritization**: Use task hierarchy and numbering to indicate priority (TASK-001, TASK-002, etc.)
+- **Task Status**:
+  - `- [ ]` for pending tasks
+  - `- [x]` for completed tasks
+  - `- [o]` for blocked tasks (when agent is unable to solve or is blocked)
+- **Task Notes**: Add contextual notes as sub-bullets under each task
+
+### Task Categories
+
+Organize tasks using hierarchical structure and consistent naming:
+
+- **Phase-based files**: `00-mvp-phase-0.md`, `01-architecture-implementation.md`, etc.
+- **Component-based organization**: Group related tasks under logical sections
+- **Task ID format**: `TASK-XXX` for main tasks, `TASK-XXX-XXX` for subtasks
+- **Tagging**: Use descriptive tags in task titles (e.g., `+rust`, `+flutter`, `+ffi`)
+
+### Workflow Integration
+
+- **Before starting work**: Review relevant `.cursor/todo/*.md` files to identify highest priority pending tasks
+- **During development**: Update task status and add progress notes as sub-bullets
+- **After completion**:
+  - Mark task as done: `- [x] **TASK-ID**: <description>`
+  - Add commit reference as sub-bullet: `- Commit: <hash>`
+  - Update task notes with any learnings or issues encountered
+
+### Task Templates
+
+Use consistent task descriptions and structure:
+
+- **Feature tasks**: `feat: <component> - <description>`
+- **Bug fixes**: `fix: <component> - <description>`
+- **Refactoring**: `refactor: <component> - <description>`
+- **Documentation**: `docs: <component> - <description>`
+- **Testing**: `test: <component> - <description>`
+
+### File Organization
+
+- **Numbered files**: Use `00-`, `01-`, `02-` prefixes for logical ordering
+- **Descriptive names**: Use clear, descriptive filenames that indicate the phase or focus area
+- **Consistent structure**: Each file should have an overview section and organized task hierarchy
+- **Cross-references**: Use task IDs to reference related tasks across files
+
+### Task Documentation Standards
+
+- **Overview section**: Each file should start with a clear overview of the phase or focus area
+- **Hierarchical organization**: Use main tasks (TASK-XXX) with subtasks (TASK-XXX-XXX)
+- **Progress tracking**: Update checkbox status as work progresses
+- **Context preservation**: Add relevant notes, decisions, and learnings as sub-bullets
+
+### Reporting and Analytics
+
+- **Progress review**: Regularly review all `.cursor/todo/*.md` files to assess overall progress
+- **Completion tracking**: Count completed vs pending tasks to measure progress
+- **Phase transitions**: Move completed phases to archive or mark as complete
+- **Cross-file dependencies**: Track dependencies between tasks across different files
+
+---
+
+## 📌 Reference
+
+- This rule inherits shared context from: `./.cursor/rules/00-core.mdc`
+- Task files location: `.cursor/todo/`

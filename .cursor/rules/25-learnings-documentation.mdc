@@ -1,0 +1,131 @@
+---
+description: Guidelines for documenting learnings, insights, and lessons learned during development
+globs: "**/*.md", "docs/**/*", ".cursor/todo/**/*.md"
+---
+
+# Learnings Documentation Standards
+
+Document important insights, lessons learned, and discoveries during development to prevent knowledge loss and improve future development.
+
+---
+
+## ✅ Requirements
+
+### **When to Document Learnings**
+
+- **CLI Issues**: Any command-line argument parsing, output formatting, or user experience problems
+- **Platform-Specific Behavior**: Windows, macOS, Linux differences
+- **Build System Problems**: Cargo or CI/CD issues
+- **Performance Insights**: Optimizations that worked or didn't work
+- **Architecture Decisions**: Why certain patterns were chosen or avoided
+- **Third-Party Library Issues**: Workarounds, bugs, or integration problems
+- **Debugging Breakthroughs**: Complex bugs that took significant time to solve
+
+### **Documentation Format**
+
+Use the following structure for learning entries:
+
+```markdown
+## [Date] - [Brief Description]
+
+**Context**: What were you working on?
+
+**Problem**: What issue or challenge did you encounter?
+
+**Investigation**: What did you try? What research did you do?
+
+**Solution**: What finally worked? Include code examples if relevant.
+
+**Why It Happened**: Root cause analysis if applicable.
+
+**Prevention**: How to avoid this in the future?
+
+**Related**: Links to issues, PRs, or related learnings.
+```
+
+### **File Organization**
+
+- **Project-wide learnings**: `.cursor/learnings/PROJECT_LEARNINGS.md`
+- **Technology-specific**:
+  - `.cursor/learnings/RUST_LEARNINGS.md`
+  - `.cursor/learnings/CLI_LEARNINGS.md`
+  - `.cursor/learnings/AI_AGENT_LEARNINGS.md`
+- **Platform-specific**:
+  - `.cursor/learnings/WINDOWS_LEARNINGS.md`
+  - `.cursor/learnings/MACOS_LEARNINGS.md`
+  - `.cursor/learnings/LINUX_LEARNINGS.md`
+
+### **Content Guidelines**
+
+- **Be specific**: Include exact error messages, code snippets, and version numbers
+- **Include context**: What environment, dependencies, and conditions led to the issue
+- **Document workarounds**: Even if not the ideal solution, document what worked
+- **Link to resources**: Stack Overflow posts, GitHub issues, documentation
+- **Tag appropriately**: Use tags like `#cli`, `#performance`, `#build-system`, `#user-experience`
+
+### **Examples**
+
+#### Good Learning Entry
+
+````markdown
+## 2024-01-15 - CLI Argument Parsing Performance Issue
+
+**Context**: Implementing command-line argument parsing for the task management feature
+
+**Problem**: Slow startup times when parsing complex command structures
+
+**Investigation**:
+
+- Profiled argument parsing with cargo bench
+- Found that clap was doing unnecessary allocations
+- Researched clap optimization patterns
+
+**Solution**:
+
+```rust
+// WRONG - causes unnecessary allocations
+let matches = App::new("edda")
+    .arg(Arg::new("task").multiple_values(true))
+    .get_matches();
+
+// CORRECT - use more efficient patterns
+let matches = App::new("edda")
+    .arg(Arg::new("task").value_delimiter(','))
+    .get_matches();
+```
+
+**Why It Happened**: Multiple value parsing was creating intermediate vectors
+
+**Prevention**: Use value delimiters instead of multiple values when possible
+
+**Related**: #cli #performance #clap
+````
+
+#### Bad Learning Entry
+
+```markdown
+## CLI parsing issue
+
+Had a problem with argument parsing. Fixed it by changing the code.
+
+**Why this is bad**: Too vague, no specific details, no actionable information
+```
+
+### **Maintenance**
+
+- **Review quarterly**: Go through learnings and remove outdated information
+- **Update references**: When learnings become outdated, update or archive them
+- **Cross-reference**: Link related learnings together
+- **Validate solutions**: Test documented solutions periodically
+
+### **Integration with Workflow**
+
+- **During development**: Document learnings as they occur, not later
+- **In commit messages**: Reference learnings when the commit addresses a documented issue
+- **In code comments**: Link to learnings for complex or non-obvious solutions
+
+---
+
+## 📌 Reference
+
+This rule inherits shared context from: `./.cursor/rules/00-core.mdc`

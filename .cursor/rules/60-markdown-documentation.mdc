@@ -1,0 +1,66 @@
+---
+description: Markdown Documentation Standards
+globs: "**/*.md"
+---
+
+# Markdown Documentation Standards
+
+Ensure comprehensive, clear documentation for project documentation, README files, and markdown content.
+
+---
+
+## ✅ Requirements
+
+### **README and Project Documentation**
+
+- **Project README**:
+
+  - Include clear project title and description
+  - List key features and capabilities
+  - Provide quick start instructions
+  - Include installation and setup steps
+  - Document architecture and design decisions
+  - Include contributing guidelines
+  - Specify license information
+
+- **Documentation Structure**:
+
+  - Use clear hierarchical structure with consistent headings
+  - Include table of contents for longer documents
+  - Use cross-references between related documentation
+  - Include code examples where appropriate
+  - Maintain consistent formatting throughout
+
+### **Documentation Structure**
+
+- **Clear Hierarchy**: Use consistent heading levels (H1, H2, H3, etc.)
+- **Table of Contents**: Include for longer documents
+- **Cross-References**: Link between related documentation
+- **Code Examples**: Include executable examples where appropriate
+
+### **Content Guidelines**
+
+- **User-Focused**: Write for the intended audience
+- **Actionable**: Provide clear next steps
+- **Complete**: Cover all necessary information
+- **Accurate**: Keep documentation up to date with code
+
+### **Formatting Standards**
+
+- **Consistent Style**: Use consistent formatting throughout
+- **Emojis**: Use emojis sparingly for visual organization
+- **Code Blocks**: Use appropriate language tags
+- **Links**: Use descriptive link text
+
+### **Documentation Types**
+
+- **User Guides**: Step-by-step instructions for common tasks
+- **API Documentation**: Reference documentation for developers
+- **Architecture Docs**: High-level system design and decisions
+- **Contributing Guidelines**: How to contribute to the project
+
+---
+
+## 📌 Reference
+
+This rule inherits shared context from: `./.cursor/rules/00-core.mdc`

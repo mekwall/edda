@@ -1,0 +1,163 @@
+---
+description: Continuous integration and deployment standards for GitHub Actions, CI/CD workflows, and automation
+globs: .github/workflows/*.yml, .github/workflows/*.yaml, .github/dependabot.yml
+---
+
+# Continuous Integration & Deployment Standards
+
+Define and enforce comprehensive automation for CI/CD pipelines, testing, and deployment using GitHub Actions.
+
+## ✅ Requirements
+
+### **GitHub Actions Workflow Structure**
+
+- **Workflow Organization**:
+  - Use descriptive workflow names that clearly indicate purpose
+  - Organize workflows by trigger type (push, pull_request, schedule)
+  - Set appropriate environment variables for Rust
+  - Use matrix strategies for cross-platform testing
+  - Structure jobs with clear dependencies and requirements
+
+### **Rust CI/CD Automation**
+
+- **Caching Dependencies**:
+
+  - Cache Rust registry and git dependencies
+  - Cache target directory to speed up builds
+  - Use hash-based cache keys for optimal invalidation
+  - Implement fallback cache keys for partial hits
+
+- **Rust Toolchain Management**:
+
+  - Use stable Rust toolchain with override
+  - Install essential components (rustfmt, clippy)
+  - Cache toolchain installation for faster workflows
+  - Pin toolchain versions for reproducible builds
+
+- **Comprehensive Testing**:
+
+  - Run tests with all features enabled and disabled
+  - Generate coverage reports using tarpaulin
+  - Upload coverage to Codecov or similar service
+  - Test both debug and release builds
+
+- **Linting and Formatting**:
+  - Run clippy with all targets and features
+  - Check code formatting with cargo fmt
+  - Auto-format code on pull requests
+  - Enforce warnings as errors
+
+### **CLI Testing and Validation**
+
+- **CLI Testing**:
+
+  - Test all CLI commands with various inputs
+  - Validate help text and documentation
+  - Test error handling and edge cases
+  - Verify output formatting and colors
+  - Test interactive prompts and user input
+
+- **Integration Testing**:
+  - Test end-to-end workflows
+  - Validate file system operations
+  - Test configuration management
+  - Verify cross-platform compatibility
+
+### **Cross-Platform Testing**
+
+- **Matrix Strategy for Multiple Platforms**:
+  - Test on Ubuntu, Windows, and macOS
+  - Use appropriate Rust targets for each platform
+  - Ensure CLI compatibility across platforms
+  - Validate native dependencies work correctly
+
+### **Security and Quality Gates**
+
+- **Security Scanning**:
+
+  - Run cargo audit for vulnerability checks
+  - Use cargo deny for dependency policy enforcement
+  - Implement Trivy vulnerability scanning
+  - Upload security results to GitHub CodeQL
+  - Block merges on security failures
+
+- **Code Quality Checks**:
+  - Integrate SonarCloud for code quality analysis
+  - Check for TODO/FIXME/XXX comments
+  - Enforce code coverage thresholds
+  - Validate documentation completeness
+  - Check for license compliance
+
+### **Performance and Optimization**
+
+- **Performance Testing**:
+  - Run performance benchmarks on main branch
+  - Monitor binary size changes
+  - Track CLI startup time metrics
+  - Compare performance across commits
+  - Alert on significant regressions
+
+### **Deployment Automation**
+
+- **Release Management**:
+  - Automate releases on main branch merges
+  - Build artifacts for all target platforms
+  - Upload releases to GitHub releases
+  - Generate release notes automatically
+  - Tag releases with semantic versioning
+
+### **Dependency Management**
+
+- **Automated Dependency Updates**:
+  - Configure Dependabot for Rust dependencies
+  - Update GitHub Actions dependencies
+  - Review and merge dependency PRs
+  - Test dependency updates before merging
+  - Always use the latest stable versions of all packages
+  - Configure Dependabot to run daily and create PRs for all outdated dependencies
+  - Set up automated testing of dependency updates in CI
+  - Use semantic versioning constraints that allow patch and minor updates
+  - Pin only major versions to prevent breaking changes while allowing security updates
+
+### **Workflow Optimization**
+
+- **Concurrency Control**:
+
+  - Use concurrency groups to prevent conflicts
+  - Cancel in-progress workflows on new commits
+  - Optimize workflow execution time
+  - Use conditional execution for expensive operations
+
+- **Conditional Execution**:
+
+  - Run expensive tests only on main branch
+  - Use path filtering to trigger relevant workflows
+  - Implement branch-specific behavior
+  - Optimize for pull request workflows
+
+- **Path Filtering**:
+
+  - Trigger workflows only when relevant files change
+  - Separate Rust workflows
+  - Avoid unnecessary workflow runs
+  - Optimize for monorepo structure
+
+- **Skipping CI**:
+  - Use `[skip ci]`, `[ci skip]`, `[no ci]`, `[skip actions]`, or `[actions skip]` in commit messages to skip workflows
+  - Skip CI for documentation-only changes or minor formatting updates
+  - Use `skip-checks: true` trailer in commit messages for more explicit control
+  - Note: Skip instructions only apply to `push` and `pull_request` events
+  - Skipped workflows will show as "Pending" in pull request checks
+
+### **Monitoring and Notifications**
+
+- **Workflow Notifications**:
+  - Send notifications on workflow failures
+  - Notify on successful deployments
+  - Integrate with Slack or other platforms
+  - Provide actionable error messages
+  - Track workflow performance metrics
+
+## 📌 Reference
+
+This rule inherits shared context from: `./.cursor/rules/00-core.mdc`
