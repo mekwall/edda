@@ -1,0 +1,11 @@
+data_dir = "./edda.db"
+log_level = "trace"
+output_format = "json"
+
+[github]
+repository = "test/repo"
+sync_interval = 600
+
+[database]
+url = "sqlite:test.db"
+max_connections = 10

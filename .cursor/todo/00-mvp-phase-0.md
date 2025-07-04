@@ -13,6 +13,8 @@ MVP Phase 0 focuses on simple task management and GitHub sync to enable internal
 - [ ] **TASK-005**: Sync with GitHub Issues (bi-directional, minimal viable integration)
 - [ ] **TASK-006**: Foundation for extensible sync (GitLab, JIRA, etc. to follow)
 - [ ] **TASK-007**: Taskwarrior data import/export compatibility
+- [x] **TASK-008**: Recursive project config search for `.edda.toml` (search up from CWD, fallback to home config)
+  - Edda now searches recursively for `.edda.toml` from the current directory up to the home directory, falling back to the home config if not found.
 
 ## Project Setup and Foundation
 
