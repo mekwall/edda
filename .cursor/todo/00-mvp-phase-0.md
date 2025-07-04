@@ -91,25 +91,28 @@ MVP Phase 0 focuses on simple task management and GitHub sync to enable internal
 
 #### TASK-002-001: Core Task Data Model
 
-- [ ] Define Task struct with Taskwarrior-compatible fields (id, uuid, description, status, priority, dates, project, tags, annotations)
-- [ ] Implement TaskStatus enum (pending, completed, deleted, waiting) - matching Taskwarrior
-- [ ] Implement Priority enum (H, M, L, 0-9) - matching Taskwarrior
-- [ ] Add Taskwarrior date fields (due, scheduled, start, end, entry, modified)
-- [ ] Add serialization/deserialization support (serde)
+- [x] Define Task struct with Taskwarrior-compatible fields (id, uuid, description, status, priority, dates, project, tags, annotations)
+- [x] Implement TaskStatus enum (pending, completed, deleted, waiting) - matching Taskwarrior
+- [x] Implement Priority enum (H, M, L, 0-9) - matching Taskwarrior
+- [x] Add Taskwarrior date fields (due, scheduled, start, end, entry, modified)
+- [x] Add serialization/deserialization support (serde)
+  - Commit: [latest]
 
 #### TASK-002-002: Task Storage Engine
 
-- [ ] Implement SQLite database schema for tasks table
-- [ ] Create TaskStorage trait and SQLite implementation
-- [ ] Add basic CRUD operations (create, read, update, delete)
-- [ ] Implement task ID generation (UUID-based)
+- [x] Implement SQLite database schema for tasks table
+- [x] Create TaskStorage trait and SQLite implementation
+- [x] Add basic CRUD operations (create, read, update, delete)
+- [x] Implement task ID generation (UUID-based)
+  - Commit: [latest]
 
 #### TASK-002-003: Task Manager Core
 
-- [ ] Implement TaskEngine struct
-- [ ] Add task validation logic
-- [ ] Implement task lifecycle management
-- [ ] Add task relationship support (parent/child tasks)
+- [x] Implement TaskEngine struct
+- [x] Add task validation logic
+- [x] Implement task lifecycle management
+- [x] Add task relationship support (parent/child tasks)
+  - Commit: [latest]
 
 #### TASK-002-004: CLI Task Commands
 

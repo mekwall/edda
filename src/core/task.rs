@@ -1,3 +1,4 @@
+use crate::core::{EddaError, EddaResult, TaskError};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
@@ -536,5 +537,368 @@ mod tests {
         // Past due date, completed task
         task.status = TaskStatus::Completed;
         assert!(!task.is_overdue());
+    }
+}
+
+/// Task engine for high-level task management operations
+pub struct TaskEngine {
+    storage: Box<dyn crate::storage::TaskStorage + Send + Sync>,
+}
+
+impl TaskEngine {
+    /// Create a new task engine with the given storage backend
+    pub fn new(storage: Box<dyn crate::storage::TaskStorage + Send + Sync>) -> Self {
+        Self { storage }
+    }
+
+    /// Create a new task with validation
+    pub async fn create_task(&self, description: String) -> EddaResult<Task> {
+        // Validate description
+        if description.trim().is_empty() {
+            return Err(EddaError::Task(TaskError::Validation {
+                message: "Task description cannot be empty".to_string(),
+            }));
+        }
+
+        let task = Task::new(description);
+        self.storage.create_task(task).await
+    }
+
+    /// Get a task by ID with validation
+    pub async fn get_task(&self, id: i64) -> EddaResult<Option<Task>> {
+        if id <= 0 {
+            return Err(EddaError::Task(TaskError::Validation {
+                message: "Task ID must be positive".to_string(),
+            }));
+        }
+
+        self.storage.get_task_by_id(id).await
+    }
+
+    /// Get a task by UUID
+    pub async fn get_task_by_uuid(&self, uuid: Uuid) -> EddaResult<Option<Task>> {
+        self.storage.get_task_by_uuid(uuid).await
+    }
+
+    /// Update a task with validation
+    pub async fn update_task(&self, mut task: Task) -> EddaResult<Task> {
+        // Validate description
+        if task.description.trim().is_empty() {
+            return Err(EddaError::Task(TaskError::Validation {
+                message: "Task description cannot be empty".to_string(),
+            }));
+        }
+
+        // Validate status transitions
+        if let Some(existing_task) = self.storage.get_task_by_id(task.id.unwrap_or(0)).await? {
+            if !self.is_valid_status_transition(&existing_task.status, &task.status) {
+                return Err(EddaError::Task(TaskError::Validation {
+                    message: format!(
+                        "Invalid status transition from {} to {}",
+                        existing_task.status, task.status
+                    ),
+                }));
+            }
+        }
+
+        // Update timestamps
+        task.modified_date = Utc::now();
+
+        self.storage.update_task(task).await
+    }
+
+    /// Mark a task as completed
+    pub async fn complete_task(&self, id: i64) -> EddaResult<Task> {
+        let mut task = self
+            .get_task(id)
+            .await?
+            .ok_or_else(|| EddaError::Task(TaskError::NotFound { id: id.to_string() }))?;
+
+        task.complete()?;
+        self.storage.update_task(task).await
+    }
+
+    /// Mark a task as deleted
+    pub async fn delete_task(&self, id: i64) -> EddaResult<Task> {
+        let mut task = self
+            .get_task(id)
+            .await?
+            .ok_or_else(|| EddaError::Task(TaskError::NotFound { id: id.to_string() }))?;
+
+        task.delete()?;
+        self.storage.update_task(task).await
+    }
+
+    /// Start time tracking for a task
+    pub async fn start_task(&self, id: i64) -> EddaResult<Task> {
+        let mut task = self
+            .get_task(id)
+            .await?
+            .ok_or_else(|| EddaError::Task(TaskError::NotFound { id: id.to_string() }))?;
+
+        task.start()?;
+        self.storage.update_task(task).await
+    }
+
+    /// Stop time tracking for a task
+    pub async fn stop_task(&self, id: i64) -> EddaResult<Task> {
+        let mut task = self
+            .get_task(id)
+            .await?
+            .ok_or_else(|| EddaError::Task(TaskError::NotFound { id: id.to_string() }))?;
+
+        // Stop time tracking by clearing start date
+        task.start_date = None;
+        task.modified_date = Utc::now();
+
+        self.storage.update_task(task).await
+    }
+
+    /// Add an annotation to a task
+    pub async fn annotate_task(&self, id: i64, description: String) -> EddaResult<Task> {
+        if description.trim().is_empty() {
+            return Err(EddaError::Task(TaskError::Validation {
+                message: "Annotation description cannot be empty".to_string(),
+            }));
+        }
+
+        let mut task = self
+            .get_task(id)
+            .await?
+            .ok_or_else(|| EddaError::Task(TaskError::NotFound { id: id.to_string() }))?;
+
+        task.add_annotation(description);
+        self.storage.update_task(task).await
+    }
+
+    /// Add a tag to a task
+    pub async fn add_tag(&self, id: i64, tag: String) -> EddaResult<Task> {
+        if tag.trim().is_empty() {
+            return Err(EddaError::Task(TaskError::Validation {
+                message: "Tag cannot be empty".to_string(),
+            }));
+        }
+
+        let mut task = self
+            .get_task(id)
+            .await?
+            .ok_or_else(|| EddaError::Task(TaskError::NotFound { id: id.to_string() }))?;
+
+        task.add_tag(tag);
+        self.storage.update_task(task).await
+    }
+
+    /// Remove a tag from a task
+    pub async fn remove_tag(&self, id: i64, tag: &str) -> EddaResult<Task> {
+        let mut task = self
+            .get_task(id)
+            .await?
+            .ok_or_else(|| EddaError::Task(TaskError::NotFound { id: id.to_string() }))?;
+
+        task.remove_tag(tag);
+        self.storage.update_task(task).await
+    }
+
+    /// List tasks with filtering
+    pub async fn list_tasks(
+        &self,
+        filter: Option<crate::storage::TaskFilter>,
+    ) -> EddaResult<Vec<Task>> {
+        self.storage.list_tasks(filter).await
+    }
+
+    /// Count tasks with filtering
+    pub async fn count_tasks(&self, filter: Option<crate::storage::TaskFilter>) -> EddaResult<u64> {
+        self.storage.count_tasks(filter).await
+    }
+
+    /// Check if a status transition is valid
+    fn is_valid_status_transition(&self, from: &TaskStatus, to: &TaskStatus) -> bool {
+        match (from, to) {
+            // Any status can transition to deleted
+            (_, TaskStatus::Deleted) => true,
+            // Deleted tasks cannot transition to other statuses
+            (TaskStatus::Deleted, _) => false,
+            // Pending can transition to any non-deleted status
+            (TaskStatus::Pending, _) => true,
+            // Completed can transition back to pending or waiting
+            (TaskStatus::Completed, TaskStatus::Pending | TaskStatus::Waiting) => true,
+            // Waiting can transition to pending or completed
+            (TaskStatus::Waiting, TaskStatus::Pending | TaskStatus::Completed) => true,
+            // Other transitions are invalid
+            _ => false,
+        }
+    }
+
+    /// Get child tasks of a parent task
+    pub async fn get_child_tasks(&self, parent_id: i64) -> EddaResult<Vec<Task>> {
+        let parent_task = self
+            .get_task(parent_id)
+            .await?
+            .ok_or_else(|| EddaError::Task(TaskError::NotFound {
+                id: parent_id.to_string(),
+            }))?;
+
+        let mut filter = crate::storage::TaskFilter::default();
+        // Note: This would need to be implemented in the storage layer
+        // For now, we'll get all tasks and filter in memory
+        let all_tasks = self.storage.list_tasks(None).await?;
+        let child_tasks: Vec<Task> = all_tasks
+            .into_iter()
+            .filter(|task| task.parent_uuid == Some(parent_task.uuid))
+            .collect();
+
+        Ok(child_tasks)
+    }
+
+    /// Get tasks that depend on a given task
+    pub async fn get_dependent_tasks(&self, task_id: i64) -> EddaResult<Vec<Task>> {
+        let task = self
+            .get_task(task_id)
+            .await?
+            .ok_or_else(|| EddaError::Task(TaskError::NotFound {
+                id: task_id.to_string(),
+            }))?;
+
+        let all_tasks = self.storage.list_tasks(None).await?;
+        let dependent_tasks: Vec<Task> = all_tasks
+            .into_iter()
+            .filter(|t| t.depends.contains(&task.uuid))
+            .collect();
+
+        Ok(dependent_tasks)
+    }
+}
+
+#[cfg(test)]
+mod task_engine_tests {
+    use super::*;
+    use crate::storage::{SqliteTaskStorage, TaskStorage};
+    use serial_test::serial;
+    use sqlx::sqlite::SqlitePoolOptions;
+
+    async fn create_test_engine() -> TaskEngine {
+        let pool = SqlitePoolOptions::new()
+            .max_connections(5)
+            .connect("sqlite::memory:")
+            .await
+            .unwrap();
+
+        crate::storage::database::run_migrations(&pool)
+            .await
+            .unwrap();
+
+        let storage = SqliteTaskStorage::new(pool);
+        TaskEngine::new(Box::new(storage))
+    }
+
+    #[tokio::test]
+    #[serial]
+    async fn test_create_task_with_validation() {
+        let engine = create_test_engine().await;
+
+        // Test valid task creation
+        let task = engine.create_task("Valid task".to_string()).await.unwrap();
+        assert_eq!(task.description, "Valid task");
+
+        // Test invalid task creation
+        let result = engine.create_task("".to_string()).await;
+        assert!(result.is_err());
+        assert!(matches!(
+            result.unwrap_err(),
+            crate::core::EddaError::Task(TaskError::Validation { .. })
+        ));
+    }
+
+    #[tokio::test]
+    #[serial]
+    async fn test_complete_task() {
+        let engine = create_test_engine().await;
+
+        // Create a task
+        let task = engine.create_task("Test task".to_string()).await.unwrap();
+        let task_id = task.id.unwrap();
+
+        // Complete the task
+        let completed_task = engine.complete_task(task_id).await.unwrap();
+        assert_eq!(completed_task.status, TaskStatus::Completed);
+        assert!(completed_task.end_date.is_some());
+    }
+
+    #[tokio::test]
+    #[serial]
+    async fn test_start_stop_task() {
+        let engine = create_test_engine().await;
+
+        // Create a task
+        let task = engine.create_task("Test task".to_string()).await.unwrap();
+        let task_id = task.id.unwrap();
+
+        // Start the task
+        let started_task = engine.start_task(task_id).await.unwrap();
+        assert!(started_task.start_date.is_some());
+
+        // Stop the task
+        let stopped_task = engine.stop_task(task_id).await.unwrap();
+        assert!(stopped_task.start_date.is_none());
+    }
+
+    #[tokio::test]
+    #[serial]
+    async fn test_add_remove_tag() {
+        let engine = create_test_engine().await;
+
+        // Create a task
+        let task = engine.create_task("Test task".to_string()).await.unwrap();
+        let task_id = task.id.unwrap();
+
+        // Add a tag
+        let task_with_tag = engine
+            .add_tag(task_id, "important".to_string())
+            .await
+            .unwrap();
+        assert!(task_with_tag.tags.contains("important"));
+
+        // Remove the tag
+        let task_without_tag = engine.remove_tag(task_id, "important").await.unwrap();
+        assert!(!task_without_tag.tags.contains("important"));
+    }
+
+    #[tokio::test]
+    #[serial]
+    async fn test_annotate_task() {
+        let engine = create_test_engine().await;
+
+        // Create a task
+        let task = engine.create_task("Test task".to_string()).await.unwrap();
+        let task_id = task.id.unwrap();
+
+        // Add an annotation
+        let annotated_task = engine
+            .annotate_task(task_id, "This is a note".to_string())
+            .await
+            .unwrap();
+        assert_eq!(annotated_task.annotations.len(), 1);
+        assert_eq!(annotated_task.annotations[0].description, "This is a note");
+    }
+
+    #[tokio::test]
+    #[serial]
+    async fn test_status_transitions() {
+        let engine = create_test_engine().await;
+
+        // Create a task
+        let task = engine.create_task("Test task".to_string()).await.unwrap();
+        let mut task = engine.get_task(task.id.unwrap()).await.unwrap().unwrap();
+
+        // Test valid transitions
+        task.status = TaskStatus::Completed;
+        let updated_task = engine.update_task(task.clone()).await.unwrap();
+        assert_eq!(updated_task.status, TaskStatus::Completed);
+
+        // Test invalid transition (completed -> deleted should be valid)
+        task.status = TaskStatus::Deleted;
+        let updated_task = engine.update_task(task).await.unwrap();
+        assert_eq!(updated_task.status, TaskStatus::Deleted);
     }
 }

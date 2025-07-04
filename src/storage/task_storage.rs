@@ -251,25 +251,21 @@ impl TaskStorage for SqliteTaskStorage {
 
         let mut query = String::from("SELECT * FROM tasks WHERE 1=1");
         let mut conditions = Vec::new();
-        let mut params: Vec<Box<dyn sqlx::Encode<'_, sqlx::Sqlite> + Send + Sync>> = Vec::new();
 
         if !filter.include_deleted {
             conditions.push("status != 'deleted'");
         }
 
-        if let Some(status) = &filter.status {
+        if let Some(_status) = &filter.status {
             conditions.push("status = ?");
-            params.push(Box::new(status.to_string()));
         }
 
-        if let Some(project) = &filter.project {
+        if let Some(_project) = &filter.project {
             conditions.push("project = ?");
-            params.push(Box::new(project.clone()));
         }
 
-        if let Some(priority) = &filter.priority {
+        if let Some(_priority) = &filter.priority {
             conditions.push("priority = ?");
-            params.push(Box::new(priority.to_string()));
         }
 
         // Add conditions to query
@@ -289,8 +285,22 @@ impl TaskStorage for SqliteTaskStorage {
             query.push_str(&format!(" OFFSET {}", offset));
         }
 
-        // Execute query
-        let rows = sqlx::query(&query)
+        // Execute query with parameters
+        let mut query_builder = sqlx::query(&query);
+
+        if let Some(status) = &filter.status {
+            query_builder = query_builder.bind(status.to_string());
+        }
+
+        if let Some(project) = &filter.project {
+            query_builder = query_builder.bind(project);
+        }
+
+        if let Some(priority) = &filter.priority {
+            query_builder = query_builder.bind(priority.to_string());
+        }
+
+        let rows = query_builder
             .fetch_all(&self.pool)
             .await
             .map_err(|e| TaskError::Storage {
@@ -315,15 +325,15 @@ impl TaskStorage for SqliteTaskStorage {
             conditions.push("status != 'deleted'");
         }
 
-        if let Some(status) = &filter.status {
+        if let Some(_status) = &filter.status {
             conditions.push("status = ?");
         }
 
-        if let Some(project) = &filter.project {
+        if let Some(_project) = &filter.project {
             conditions.push("project = ?");
         }
 
-        if let Some(priority) = &filter.priority {
+        if let Some(_priority) = &filter.priority {
             conditions.push("priority = ?");
         }
 
@@ -332,12 +342,28 @@ impl TaskStorage for SqliteTaskStorage {
             query.push_str(&format!(" AND {}", condition));
         }
 
-        let count: i64 = sqlx::query_scalar(&query)
-            .fetch_one(&self.pool)
-            .await
-            .map_err(|e| TaskError::Storage {
-                message: format!("Failed to count tasks: {}", e),
-            })?;
+        // Execute query with parameters
+        let mut query_builder = sqlx::query_scalar(&query);
+
+        if let Some(status) = &filter.status {
+            query_builder = query_builder.bind(status.to_string());
+        }
+
+        if let Some(project) = &filter.project {
+            query_builder = query_builder.bind(project);
+        }
+
+        if let Some(priority) = &filter.priority {
+            query_builder = query_builder.bind(priority.to_string());
+        }
+
+        let count: i64 =
+            query_builder
+                .fetch_one(&self.pool)
+                .await
+                .map_err(|e| TaskError::Storage {
+                    message: format!("Failed to count tasks: {}", e),
+                })?;
 
         Ok(count as u64)
     }
@@ -508,7 +534,7 @@ mod tests {
     #[tokio::test]
     #[serial]
     async fn test_create_and_get_task() {
-        let pool = sqlx::SqlitePoolOptions::new()
+        let pool = SqlitePoolOptions::new()
             .max_connections(5)
             .connect("sqlite::memory:")
             .await
@@ -545,7 +571,7 @@ mod tests {
     #[tokio::test]
     #[serial]
     async fn test_update_task() {
-        let pool = sqlx::SqlitePoolOptions::new()
+        let pool = SqlitePoolOptions::new()
             .max_connections(5)
             .connect("sqlite::memory:")
             .await
@@ -584,7 +610,7 @@ mod tests {
     #[tokio::test]
     #[serial]
     async fn test_list_tasks() {
-        let pool = sqlx::SqlitePoolOptions::new()
+        let pool = SqlitePoolOptions::new()
             .max_connections(5)
             .connect("sqlite::memory:")
             .await
@@ -622,7 +648,7 @@ mod tests {
     #[tokio::test]
     #[serial]
     async fn test_delete_task() {
-        let pool = sqlx::SqlitePoolOptions::new()
+        let pool = SqlitePoolOptions::new()
             .max_connections(5)
             .connect("sqlite::memory:")
             .await
