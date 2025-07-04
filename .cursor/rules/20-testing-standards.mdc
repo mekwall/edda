@@ -1,5 +1,5 @@
 ---
-description: Testing rules for Rust CLI development
+title: Testing Standards
 globs: "**/*.rs"
 ---
 
@@ -49,6 +49,12 @@ All Rust CLI code must be tested before commit. This applies to command modules,
   - Test output formats (text, JSON, YAML)
   - Test error conditions and exit codes
   - Test with different input scenarios
+
+## Integration Testing Requirement
+
+- All features and bug fixes must be verified using automated integration tests.
+- Manual testing should only be used for exploratory or edge cases not easily covered by automation.
+- Do **not** rely on manual testing as the primary means of verification; always write integration tests to confirm that things are working as expected.
 
 ---
 
