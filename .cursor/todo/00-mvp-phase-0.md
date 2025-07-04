@@ -20,22 +20,24 @@ MVP Phase 0 focuses on simple task management and GitHub sync to enable internal
 
 #### TASK-001-001: Rust Project Initialization
 
-- [ ] Initialize new Rust project with `cargo new edda`
-- [ ] Set up Cargo.toml with project metadata
-- [ ] Configure Rust edition (2024)
-- [ ] Set up workspace structure for future components
-- [ ] Add .gitignore for Rust projects
+- [x] Initialize new Rust project with `cargo new edda`
+- [x] Set up Cargo.toml with project metadata
+- [x] Configure Rust edition (2024)
+- [x] Set up workspace structure for future components
+- [x] Add .gitignore for Rust projects
+  - Commit: e584dec
 
 #### TASK-001-002: Core Dependencies
 
-- [ ] Add clap for command-line argument parsing
-- [ ] Add serde for serialization/deserialization
-- [ ] Add tokio for async runtime
-- [ ] Add sqlx for database operations
-- [ ] Add chrono for date/time handling
-- [ ] Add uuid for unique identifiers
-- [ ] Add anyhow for error handling
-- [ ] Add tracing for logging
+- [x] Add clap for command-line argument parsing
+- [x] Add serde for serialization/deserialization
+- [x] Add tokio for async runtime
+- [x] Add sqlx for database operations
+- [x] Add chrono for date/time handling
+- [x] Add uuid for unique identifiers
+- [x] Add anyhow for error handling
+- [x] Add tracing for logging
+  - Commit: <hash>
 
 #### TASK-001-003: Project Structure
 
