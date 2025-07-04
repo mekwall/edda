@@ -13,6 +13,7 @@ This document defines the core automation principles and shared context that all
 
 - The agent must **always read** all files in `.cursor/spec*` and `.cursor/learnings*` **before applying changes**.
 - The agent must only work on **one task at a time**.
+- The agent must always write tests for code and make sure it passes.
 - The agent must work as autonomously as possible. If stuck, the agent should add a TODO comment and track it as a todo task to be done at later time.
 - The agent must not ask for confirmation or ask questions unless interrupted.
 - The next task is defined by the **top unchecked item** in the markdown files in `.cursor/todo/`.
