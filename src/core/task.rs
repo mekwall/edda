@@ -42,12 +42,11 @@ impl std::str::FromStr for TaskStatus {
 }
 
 /// Task priority enum matching Taskwarrior priorities
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Serialize, Deserialize)]
 pub enum Priority {
-    High,
-    #[default]
-    Medium,
     Low,
+    Medium,
+    High,
     Number(u8), // 0-9
 }
 
