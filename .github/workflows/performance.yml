@@ -1,0 +1,78 @@
+name: benchmark
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "**.md"
+      - ".github/ISSUE_TEMPLATE/**"
+  pull_request:
+    branches: [main]
+    paths-ignore:
+      - "**.md"
+      - ".github/ISSUE_TEMPLATE/**"
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  benchmark:
+    name: Run Benchmarks
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+
+      - name: Install cargo-criterion
+        run: cargo install cargo-criterion
+
+      - name: Run benchmarks
+        run: cargo criterion --message-format=json --output-format=json
+
+      - name: Upload benchmark results
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-results
+          path: target/criterion/report/
+
+  analyze-size:
+    name: Binary Size Analysis
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+
+      - name: Build release binary
+        run: cargo build --release --all-features
+
+      - name: Analyze binary size
+        run: |
+          echo "Binary size analysis:"
+          ls -lh target/release/edda
+          echo "Binary size in bytes:"
+          wc -c < target/release/edda
+          echo "Stripped binary size:"
+          strip target/release/edda
+          wc -c < target/release/edda
+
+      - name: Upload binary size report
+        uses: actions/upload-artifact@v4
+        with:
+          name: binary-size-report
+          path: target/release/edda
