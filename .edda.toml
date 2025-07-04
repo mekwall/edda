@@ -3,7 +3,10 @@ log_level = "info"
 output_format = "text"
 
 [github]
+sync_mode = "projects"
 sync_interval = 300
+repository = "mekwall/edda"
+project_ids = [1]
 
 [database]
 url = "sqlite:./.cursor/edda.db"
