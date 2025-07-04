@@ -732,12 +732,11 @@ impl TaskEngine {
 
     /// Get child tasks of a parent task
     pub async fn get_child_tasks(&self, parent_id: i64) -> EddaResult<Vec<Task>> {
-        let parent_task = self
-            .get_task(parent_id)
-            .await?
-            .ok_or_else(|| EddaError::Task(TaskError::NotFound {
+        let parent_task = self.get_task(parent_id).await?.ok_or_else(|| {
+            EddaError::Task(TaskError::NotFound {
                 id: parent_id.to_string(),
-            }))?;
+            })
+        })?;
 
         let mut filter = crate::storage::TaskFilter::default();
         // Note: This would need to be implemented in the storage layer
@@ -753,12 +752,11 @@ impl TaskEngine {
 
     /// Get tasks that depend on a given task
     pub async fn get_dependent_tasks(&self, task_id: i64) -> EddaResult<Vec<Task>> {
-        let task = self
-            .get_task(task_id)
-            .await?
-            .ok_or_else(|| EddaError::Task(TaskError::NotFound {
+        let task = self.get_task(task_id).await?.ok_or_else(|| {
+            EddaError::Task(TaskError::NotFound {
                 id: task_id.to_string(),
-            }))?;
+            })
+        })?;
 
         let all_tasks = self.storage.list_tasks(None).await?;
         let dependent_tasks: Vec<Task> = all_tasks

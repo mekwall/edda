@@ -14,6 +14,14 @@ pub async fn init_database(db_path: PathBuf) -> EddaResult<()> {
         })?;
     }
 
+    // Create empty database file if it doesn't exist
+    if !db_path.exists() {
+        // Create an empty file to initialize SQLite database
+        std::fs::File::create(&db_path).map_err(|e| crate::core::StorageError::Initialization {
+            message: format!("Failed to create database file: {}", e),
+        })?;
+    }
+
     // Create database URL
     let database_url = format!("sqlite:{}", db_path.to_string_lossy());
 
