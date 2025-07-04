@@ -46,7 +46,7 @@ MVP Phase 0 focuses on simple task management and GitHub sync to enable internal
 - [x] Create basic error types
 - [x] Set up configuration management
 - [x] Create basic logging setup
-  - Commit: <hash>
+  - Commit: ce05d28
 
 #### TASK-001-004: Basic CLI Framework
 
@@ -55,23 +55,25 @@ MVP Phase 0 focuses on simple task management and GitHub sync to enable internal
 - [x] Add global options (--config, --data-dir, --format, --quiet, --verbose)
 - [x] Create placeholder for task subcommands
 - [x] Add basic error handling and exit codes
-  - Commit: <hash>
+  - Commit: ce05d28
 
 #### TASK-001-005: Configuration System
 
-- [ ] Define configuration file format (TOML)
-- [ ] Implement configuration loading from file
-- [ ] Add environment variable support
-- [ ] Create default configuration
-- [ ] Add configuration validation
+- [x] Define configuration file format (TOML)
+- [x] Implement configuration loading from file
+- [x] Add environment variable support
+- [x] Create default configuration
+- [x] Add configuration validation
+  - Commit: ce05d28
 
 #### TASK-001-006: Data Directory Setup
 
-- [ ] Create data directory structure
-- [ ] Set up database initialization
-- [ ] Create configuration directory
-- [ ] Set up log directory
-- [ ] Add data directory permissions handling
+- [x] Create data directory structure
+- [x] Set up database initialization
+- [x] Create configuration directory
+- [x] Set up log directory
+- [x] Add data directory permissions handling
+  - Commit: <hash>
 
 ## Task Management Implementation
 
