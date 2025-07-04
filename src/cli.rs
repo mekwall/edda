@@ -69,6 +69,13 @@ pub enum Commands {
         #[command(subcommand)]
         subcommand: SystemCommands,
     },
+
+    /// Sync commands
+    Sync {
+        /// Sync subcommand
+        #[command(subcommand)]
+        subcommand: SyncCommands,
+    },
 }
 
 #[derive(Subcommand)]
@@ -242,14 +249,78 @@ pub enum SystemCommands {
         backup: PathBuf,
     },
 
-    /// Show/edit configuration
-    Config,
+    /// Configuration management
+    Config {
+        /// Configuration subcommand
+        #[command(subcommand)]
+        subcommand: ConfigCommands,
+    },
 
     /// Show system status
     Status,
 
     /// Clean up temporary files
     Cleanup,
+}
+
+#[derive(Subcommand)]
+pub enum ConfigCommands {
+    /// Show current configuration
+    Show,
+
+    /// Set configuration value
+    Set {
+        /// Configuration key (e.g., github.token, github.repository)
+        key: String,
+        /// Configuration value
+        value: String,
+    },
+
+    /// Get configuration value
+    Get {
+        /// Configuration key (e.g., github.token, github.repository)
+        key: String,
+    },
+
+    /// Edit configuration file
+    Edit,
+
+    /// Validate configuration
+    Validate,
+
+    /// Reset configuration to defaults
+    Reset,
+}
+
+#[derive(Subcommand)]
+pub enum SyncCommands {
+    /// GitHub sync commands
+    #[command(name = "github")]
+    GitHub {
+        /// GitHub sync subcommand
+        #[command(subcommand)]
+        subcommand: GitHubSyncCommands,
+    },
+}
+
+#[derive(Subcommand)]
+pub enum GitHubSyncCommands {
+    /// Pull tasks from GitHub Issues
+    Pull,
+
+    /// Push tasks to GitHub Issues
+    Push,
+
+    /// Show sync status
+    Status,
+
+    /// Configure GitHub sync
+    Config {
+        /// Configuration key (token, repository, sync_interval)
+        key: String,
+        /// Configuration value
+        value: String,
+    },
 }
 
 /// Parse CLI arguments and return configuration

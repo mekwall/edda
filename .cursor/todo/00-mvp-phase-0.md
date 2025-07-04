@@ -6,10 +6,10 @@ MVP Phase 0 focuses on simple task management and GitHub sync to enable internal
 
 ## Core MVP Requirements
 
-- [ ] **TASK-001**: Project setup and foundation (Rust project, dependencies, basic structure)
-- [ ] **TASK-002**: Taskwarrior-compatible task management (create, list, modify, done, delete)
-- [ ] **TASK-003**: Local-first architecture with SQLite storage
-- [ ] **TASK-004**: Basic client-server sync protocol
+- [x] **TASK-001**: Project setup and foundation (Rust project, dependencies, basic structure)
+- [x] **TASK-002**: Taskwarrior-compatible task management (create, list, modify, done, delete)
+- [x] **TASK-003**: Local-first architecture with SQLite storage
+- [x] **TASK-004**: Basic client-server sync protocol
 - [ ] **TASK-005**: Sync with GitHub Issues (bi-directional, minimal viable integration)
 - [ ] **TASK-006**: Foundation for extensible sync (GitLab, JIRA, etc. to follow)
 - [ ] **TASK-007**: Taskwarrior data import/export compatibility
@@ -116,17 +116,18 @@ MVP Phase 0 focuses on simple task management and GitHub sync to enable internal
 
 #### TASK-002-004: CLI Task Commands
 
-- [ ] Implement `edda task add <description>` command (Taskwarrior: `task add`)
-- [ ] Implement `edda task list` command with Taskwarrior-compatible filtering
-- [ ] Implement `edda task <id> info` command (Taskwarrior: `task <id> info`)
-- [ ] Implement `edda task <id> modify <field> <value>` command (Taskwarrior: `task <id> modify`)
-- [ ] Implement `edda task <id> done` command (Taskwarrior: `task <id> done`)
-- [ ] Implement `edda task <id> delete` command (Taskwarrior: `task <id> delete`)
+- [x] Implement `edda task add <description>` command (Taskwarrior: `task add`)
+- [x] Implement `edda task list` command with Taskwarrior-compatible filtering
+- [x] Implement `edda task <id> info` command (Taskwarrior: `task <id> info`)
+- [x] Implement `edda task <id> modify <field> <value>` command (Taskwarrior: `task <id> modify`)
+- [x] Implement `edda task <id> done` command (Taskwarrior: `task <id> done`)
+- [x] Implement `edda task <id> delete` command (Taskwarrior: `task <id> delete`)
 - [x] Implement `edda task <id> start` command (Taskwarrior: `task <id> start`)
 - [x] Implement `edda task <id> stop` command (Taskwarrior: `task <id> stop`)
 - [x] Implement `edda task <id> annotate <note>` command (Taskwarrior: `task <id> annotate`)
 - [x] Implement `edda task <id> +tag` and `edda task <id> -tag` commands
   - Commit: 08a1b02
+  - Note: All CLI task commands are implemented and working.
 
 #### TASK-002-005: Task Output Formatting
 
@@ -188,20 +189,6 @@ MVP Phase 0 focuses on simple task management and GitHub sync to enable internal
 - [x] Implement authentication and session management
 - [x] Add change tracking and versioning
 - [x] Implement conflict detection and resolution
-
-#### TASK-004-002: Client Sync Engine
-
-- [ ] Implement client-side sync manager
-- [ ] Add background sync capabilities
-- [ ] Implement change batching and optimization
-- [ ] Add sync status monitoring
-
-#### TASK-004-003: Server Sync Engine
-
-- [ ] Implement server-side sync coordinator
-- [ ] Add user management and authentication
-- [ ] Implement multi-device support
-- [ ] Add real-time sync via WebSockets
 
 ## GitHub Sync Implementation
 

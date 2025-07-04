@@ -80,6 +80,9 @@ pub enum ConfigError {
 
     #[error("Configuration validation failed: {message}")]
     Validation { message: String },
+
+    #[error("Configuration persistence failed: {message}")]
+    Persistence { message: String },
 }
 
 /// Sync-specific errors

@@ -83,18 +83,130 @@ impl Default for DatabaseConfig {
     }
 }
 
+impl EddaConfig {
+    /// Set a configuration value by key
+    pub fn set_value(&mut self, key: &str, value: &str) -> EddaResult<()> {
+        match key {
+            "data_dir" => {
+                self.data_dir = PathBuf::from(value);
+            }
+            "log_level" => {
+                let valid_levels = ["trace", "debug", "info", "warn", "error"];
+                if !valid_levels.contains(&value) {
+                    return Err(ConfigError::Validation {
+                        message: format!("Invalid log level: {}", value),
+                    }
+                    .into());
+                }
+                self.log_level = value.to_string();
+            }
+            "output_format" => {
+                let valid_formats = ["text", "json", "yaml"];
+                if !valid_formats.contains(&value) {
+                    return Err(ConfigError::Validation {
+                        message: format!("Invalid output format: {}", value),
+                    }
+                    .into());
+                }
+                self.output_format = value.to_string();
+            }
+            "database.url" => {
+                self.database.url = value.to_string();
+            }
+            "database.max_connections" => {
+                let max_conn = value.parse::<u32>().map_err(|_| ConfigError::Validation {
+                    message: format!("Invalid max_connections value: {}", value),
+                })?;
+                self.database.max_connections = max_conn;
+            }
+            "github.token" => {
+                self.github.token = Some(value.to_string());
+            }
+            "github.repository" => {
+                self.github.repository = Some(value.to_string());
+            }
+            "github.sync_interval" => {
+                let interval = value.parse::<u64>().map_err(|_| ConfigError::Validation {
+                    message: format!("Invalid sync_interval value: {}", value),
+                })?;
+                self.github.sync_interval = interval;
+            }
+            _ => {
+                return Err(ConfigError::Validation {
+                    message: format!("Unknown configuration key: {}", key),
+                }
+                .into());
+            }
+        }
+        Ok(())
+    }
+
+    /// Get a configuration value by key
+    pub fn get_value(&self, key: &str) -> Option<String> {
+        match key {
+            "data_dir" => Some(self.data_dir.to_string_lossy().to_string()),
+            "log_level" => Some(self.log_level.clone()),
+            "output_format" => Some(self.output_format.clone()),
+            "database.url" => Some(self.database.url.clone()),
+            "database.max_connections" => Some(self.database.max_connections.to_string()),
+            "github.token" => self.github.token.clone(),
+            "github.repository" => self.github.repository.clone(),
+            "github.sync_interval" => Some(self.github.sync_interval.to_string()),
+            _ => None,
+        }
+    }
+}
+
 /// Load configuration from file and environment variables
 pub fn load_config(config_path: Option<PathBuf>) -> EddaResult<EddaConfig> {
     let mut config = if let Some(path) = config_path {
         load_config_from_file(&path)?
     } else {
-        EddaConfig::default()
+        // Try to load from default config file
+        let default_config_path = get_default_config_path();
+        if default_config_path.exists() {
+            load_config_from_file(&default_config_path)?
+        } else {
+            EddaConfig::default()
+        }
     };
 
     // Override with environment variables
     override_from_env(&mut config);
 
     Ok(config)
+}
+
+/// Save configuration to file
+pub fn save_config(config: &EddaConfig, config_path: Option<PathBuf>) -> EddaResult<()> {
+    let path = config_path.unwrap_or_else(get_default_config_path);
+
+    // Create config directory if it doesn't exist
+    if let Some(parent) = path.parent() {
+        if !parent.exists() {
+            std::fs::create_dir_all(parent).map_err(|e| ConfigError::Persistence {
+                message: format!("Failed to create config directory: {e}"),
+            })?;
+        }
+    }
+
+    let toml_string = toml::to_string_pretty(config).map_err(|e| ConfigError::Persistence {
+        message: format!("Failed to serialize configuration: {e}"),
+    })?;
+
+    std::fs::write(&path, toml_string).map_err(|e| ConfigError::Persistence {
+        message: format!("Failed to write configuration file: {e}"),
+    })?;
+
+    Ok(())
+}
+
+/// Get default configuration file path
+pub fn get_default_config_path() -> PathBuf {
+    dirs::config_dir()
+        .unwrap_or_else(|| PathBuf::from("."))
+        .join("edda")
+        .join("config.toml")
 }
 
 /// Load configuration from TOML file

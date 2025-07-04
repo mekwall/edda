@@ -3,7 +3,10 @@ mod core;
 mod storage;
 mod sync;
 
-use cli::{Commands, DocCommands, StateCommands, SystemCommands, TaskCommands, init_app};
+use cli::{
+    Commands, ConfigCommands, DocCommands, GitHubSyncCommands, StateCommands, SyncCommands,
+    SystemCommands, TaskCommands, init_app,
+};
 use core::{EddaConfig, EddaResult, Priority, TaskEngine, TaskStatus};
 use std::path::PathBuf;
 use std::str::FromStr;
@@ -35,6 +38,7 @@ async fn main() {
         Some(Commands::State { subcommand }) => handle_state_commands(subcommand).await,
         Some(Commands::Query { query }) => handle_query_command(query).await,
         Some(Commands::System { subcommand }) => handle_system_commands(subcommand, &config).await,
+        Some(Commands::Sync { subcommand }) => handle_sync_commands(subcommand, &config).await,
         None => {
             // Show help if no command provided
             println!("Edda: AI agent-native CLI for structured task and document management");
@@ -333,6 +337,145 @@ async fn handle_query_command(_query: String) -> EddaResult<()> {
     Ok(())
 }
 
+async fn handle_sync_commands(subcommand: SyncCommands, config: &EddaConfig) -> EddaResult<()> {
+    match subcommand {
+        SyncCommands::GitHub { subcommand } => {
+            handle_github_sync_commands(subcommand, config).await
+        }
+    }
+}
+
+async fn handle_github_sync_commands(
+    subcommand: GitHubSyncCommands,
+    config: &EddaConfig,
+) -> EddaResult<()> {
+    match subcommand {
+        GitHubSyncCommands::Pull => {
+            println!("Pulling tasks from GitHub Issues...");
+            // TODO: Implement GitHub sync pull
+            println!("GitHub sync pull not yet implemented");
+            Ok(())
+        }
+        GitHubSyncCommands::Push => {
+            println!("Pushing tasks to GitHub Issues...");
+            // TODO: Implement GitHub sync push
+            println!("GitHub sync push not yet implemented");
+            Ok(())
+        }
+        GitHubSyncCommands::Status => {
+            println!("GitHub Sync Status:");
+            println!("  Repository: {:?}", config.github.repository);
+            println!(
+                "  Token: {}",
+                if config.github.token.is_some() {
+                    "Configured"
+                } else {
+                    "Not configured"
+                }
+            );
+            println!("  Sync Interval: {} seconds", config.github.sync_interval);
+            println!("  Last Sync: Not implemented yet");
+            Ok(())
+        }
+        GitHubSyncCommands::Config { key, value } => {
+            println!("Configuring GitHub sync: {} = {}", key, value);
+
+            // Create a mutable copy of the config
+            let mut config_copy = config.clone();
+
+            // Set the GitHub configuration value
+            let full_key = format!("github.{}", key);
+            config_copy.set_value(&full_key, &value)?;
+
+            // Save the configuration
+            core::save_config(&config_copy, None)?;
+
+            println!("GitHub sync configuration updated successfully");
+            Ok(())
+        }
+    }
+}
+
+async fn handle_config_commands(subcommand: ConfigCommands, config: &EddaConfig) -> EddaResult<()> {
+    match subcommand {
+        ConfigCommands::Show => {
+            println!("Current Configuration:");
+            println!("  Data Directory: {:?}", config.data_dir);
+            println!("  Log Level: {}", config.log_level);
+            println!("  Output Format: {}", config.output_format);
+            println!("  Database URL: {}", config.database.url);
+            println!("  GitHub Repository: {:?}", config.github.repository);
+            println!(
+                "  GitHub Token: {}",
+                if config.github.token.is_some() {
+                    "***"
+                } else {
+                    "Not set"
+                }
+            );
+            println!("  Sync Interval: {} seconds", config.github.sync_interval);
+            Ok(())
+        }
+        ConfigCommands::Set { key, value } => {
+            println!("Setting configuration key '{}' to '{}'", key, value);
+
+            // Create a mutable copy of the config
+            let mut config_copy = config.clone();
+
+            // Set the value
+            config_copy.set_value(&key, &value)?;
+
+            // Save the configuration
+            core::save_config(&config_copy, None)?;
+
+            println!("Configuration updated and saved successfully");
+            Ok(())
+        }
+        ConfigCommands::Get { key } => {
+            match config.get_value(&key) {
+                Some(value) => {
+                    if key == "github.token" {
+                        println!("***");
+                    } else {
+                        println!("{}", value);
+                    }
+                }
+                None => println!("Unknown configuration key: {}", key),
+            }
+            Ok(())
+        }
+        ConfigCommands::Edit => {
+            println!("Opening configuration file for editing...");
+            // TODO: Implement configuration file editing
+            println!("Configuration file editing not yet implemented");
+            Ok(())
+        }
+        ConfigCommands::Validate => {
+            println!("Validating configuration...");
+            match core::validate_config(config) {
+                Ok(()) => println!("Configuration is valid"),
+                Err(e) => {
+                    println!("Configuration validation failed: {}", e);
+                    return Err(e);
+                }
+            }
+            Ok(())
+        }
+        ConfigCommands::Reset => {
+            println!("Resetting configuration to defaults...");
+
+            // Create default configuration
+            let default_config = EddaConfig::default();
+
+            // Save the default configuration
+            core::save_config(&default_config, None)?;
+
+            println!("Configuration reset to defaults successfully");
+            Ok(())
+        }
+    }
+}
+
 async fn handle_system_commands(subcommand: SystemCommands, config: &EddaConfig) -> EddaResult<()> {
     match subcommand {
         SystemCommands::Init => {
@@ -383,10 +526,7 @@ async fn handle_system_commands(subcommand: SystemCommands, config: &EddaConfig)
             // TODO: Implement restore
             Ok(())
         }
-        SystemCommands::Config => {
-            println!("Configuration management not yet implemented");
-            Ok(())
-        }
+        SystemCommands::Config { subcommand } => handle_config_commands(subcommand, config).await,
         SystemCommands::Status => {
             println!("System status not yet implemented");
             Ok(())
