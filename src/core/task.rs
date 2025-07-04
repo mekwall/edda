@@ -5,8 +5,7 @@ use std::collections::HashSet;
 use uuid::Uuid;
 
 /// Task status enum matching Taskwarrior statuses
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
-#[derive(Default)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, Default)]
 pub enum TaskStatus {
     #[default]
     Pending,
@@ -14,7 +13,6 @@ pub enum TaskStatus {
     Deleted,
     Waiting,
 }
-
 
 impl std::fmt::Display for TaskStatus {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -44,8 +42,7 @@ impl std::str::FromStr for TaskStatus {
 }
 
 /// Task priority enum matching Taskwarrior priorities
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
-#[derive(Default)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, Default)]
 pub enum Priority {
     High,
     #[default]
@@ -53,7 +50,6 @@ pub enum Priority {
     Low,
     Number(u8), // 0-9
 }
-
 
 impl std::fmt::Display for Priority {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
