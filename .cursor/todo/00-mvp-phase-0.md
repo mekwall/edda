@@ -75,6 +75,16 @@ MVP Phase 0 focuses on simple task management and GitHub sync to enable internal
 - [x] Add data directory permissions handling
   - Commit: f4c8538
 
+#### TASK-001-007: Testing Infrastructure
+
+- [x] Add comprehensive tests for error types
+- [x] Add tests for configuration management
+- [x] Add tests for storage and database initialization
+- [x] Fix Rust 2024 edition compatibility (unsafe env var calls)
+- [x] Use in-memory SQLite databases for reliable testing
+- [x] All 21 tests passing
+  - Commit: 8f2e1a3
+
 ## Task Management Implementation
 
 ### TASK-002: Taskwarrior-Compatible Task Management

@@ -33,8 +33,8 @@ pub async fn init_database(db_path: PathBuf) -> EddaResult<()> {
 }
 
 /// Run database migrations
-async fn run_migrations(pool: &SqlitePool) -> EddaResult<()> {
-    // Create tasks table
+pub async fn run_migrations(pool: &SqlitePool) -> EddaResult<()> {
+    // Create tasks table with Taskwarrior-compatible fields
     sqlx::query(
         r#"
         CREATE TABLE IF NOT EXISTS tasks (
@@ -52,6 +52,11 @@ async fn run_migrations(pool: &SqlitePool) -> EddaResult<()> {
             modified_date TEXT NOT NULL,
             tags TEXT,
             annotations TEXT,
+            parent_uuid TEXT,
+            depends TEXT,
+            recurrence TEXT,
+            effort INTEGER,
+            effort_spent INTEGER,
             created_at TEXT NOT NULL,
             updated_at TEXT NOT NULL
         )
@@ -102,7 +107,7 @@ async fn run_migrations(pool: &SqlitePool) -> EddaResult<()> {
         message: format!("Failed to create state table: {}", e),
     })?;
 
-    // Create indexes
+    // Create indexes for tasks
     sqlx::query("CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status)")
         .execute(pool)
         .await
@@ -122,6 +127,20 @@ async fn run_migrations(pool: &SqlitePool) -> EddaResult<()> {
         .await
         .map_err(|e| crate::core::StorageError::Migration {
             message: format!("Failed to create tasks due date index: {}", e),
+        })?;
+
+    sqlx::query("CREATE INDEX IF NOT EXISTS idx_tasks_uuid ON tasks(uuid)")
+        .execute(pool)
+        .await
+        .map_err(|e| crate::core::StorageError::Migration {
+            message: format!("Failed to create tasks uuid index: {}", e),
+        })?;
+
+    sqlx::query("CREATE INDEX IF NOT EXISTS idx_tasks_parent_uuid ON tasks(parent_uuid)")
+        .execute(pool)
+        .await
+        .map_err(|e| crate::core::StorageError::Migration {
+            message: format!("Failed to create tasks parent_uuid index: {}", e),
         })?;
 
     Ok(())

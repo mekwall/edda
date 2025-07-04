@@ -29,19 +29,22 @@ pub enum EddaError {
 }
 
 /// Task-specific errors
-#[derive(Error, Debug)]
+#[derive(Debug, thiserror::Error)]
 pub enum TaskError {
     #[error("Task not found: {id}")]
     NotFound { id: String },
 
-    #[error("Invalid task status transition: {from} -> {to}")]
+    #[error("Invalid status transition from {from} to {to}")]
     InvalidStatusTransition { from: String, to: String },
 
-    #[error("Task validation failed: {message}")]
+    #[error("Validation error: {message}")]
     Validation { message: String },
 
     #[error("Task already exists: {id}")]
     AlreadyExists { id: String },
+
+    #[error("Storage error: {message}")]
+    Storage { message: String },
 }
 
 /// Storage-specific errors
