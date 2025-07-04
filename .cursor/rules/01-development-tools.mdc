@@ -1,30 +1,60 @@
 ---
+
 description: Development tools and local development environment standards for Rust CLI development, IDE configurations, and local tooling
-globs: .pre-commit-config.yaml, rust-toolchain.toml, rust-toolchain, .cargo/config.toml, .cargo/config, Cargo.toml, Cargo.lock, target/
----
 
 # Development Tools & Local Environment Standards
 
-Define and enforce standards for local development tools, IDE configurations, and development environment setup for Rust CLI development.
+globs: .pre-commit-config.yaml, rust-toolchain.toml, rust-toolchain, .cargo/config.toml, .cargo/config, Cargo.toml, Cargo.lock, target/
 
 ## ✅ Requirements
 
-### **Pre-commit Hooks**
+### **Cargo as the Standard Rust Toolchain**
+
+- **All developer and automation workflows must use `cargo` for:**
+  - Building and running the project
+  - Installing and running development tools (e.g., cargo-watch, cargo-audit, cargo-tarpaulin)
+  - Running project tasks (build, test, lint, coverage, etc.)
+- **Use direct `cargo` commands in documentation, scripts, and automation.**
+- All documentation, scripts, and automation must reference `cargo <command>` for all workflows.
+- The only exception is for advanced debugging or when explicitly required by a tool that does not work with cargo.
+
+#### **Valid Example**
+
+```sh
+# Correct: Use cargo directly
+git clone ...
+cd edda
+cargo build
+cargo test
+cargo fmt
+cargo clippy
+cargo tarpaulin
+```
+
+#### **Invalid Example**
+
+```sh
+# Incorrect: Using non-standard tools
+mise run build
+mise run test
+```
+
+### **Code Quality Standards**
 
 - **Code Quality Enforcement**:
 
-  - Configure pre-commit hooks for automatic code quality checks
-  - Run formatting checks before commits
-  - Execute linting and security checks
-  - Validate YAML and configuration files
-  - Prevent large file commits
+  - Run formatting checks before commits: `cargo fmt --check`
+  - Execute linting and security checks: `cargo clippy -- -D warnings`
+  - Validate Cargo.toml syntax: `cargo check`
+  - Run tests before pushing: `cargo test`
+  - Check for security vulnerabilities: `cargo audit`
 
-- **Hook Configuration**:
-  - Use pre-commit framework for hook management
-  - Configure hooks for Rust files
-  - Set up automatic formatting with cargo fmt
-  - Run clippy checks before commits
-  - Validate Cargo.toml syntax
+- **Manual Quality Checks**:
+  - Format code: `cargo fmt`
+  - Lint code: `cargo clippy`
+  - Run tests: `cargo test`
+  - Check security: `cargo audit`
+  - Generate coverage: `cargo tarpaulin`
 
 ### **Rust Development Tools**
 
