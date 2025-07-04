@@ -71,7 +71,7 @@ jobs:
         run: cargo build --release --no-default-features
 
   audit:
-    name: Security Audit
+    name: security-audit
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -89,7 +89,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
 
   coverage:
-    name: Code Coverage Report
+    name: upload-coverage
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 
