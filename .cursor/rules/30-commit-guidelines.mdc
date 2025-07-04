@@ -18,7 +18,9 @@ Ensure consistent, atomic commits with proper semantic formatting.
 - Each commit must:
 
   - Be **atomic** (do one thing)
-  - Pass **all tests** (`cargo test`, `cargo clippy`, etc.)
+  - Include tests for new features
+  - Pass **all tests** with `cargo test`
+  - Pass linting with ´cargo clippy´
   - Have a **clear, descriptive message**
 
 - Commit message format:
