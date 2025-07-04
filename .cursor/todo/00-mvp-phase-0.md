@@ -15,6 +15,8 @@ MVP Phase 0 focuses on simple task management and GitHub sync to enable internal
 - [ ] **TASK-007**: Taskwarrior data import/export compatibility
 - [x] **TASK-008**: Recursive project config search for `.edda.toml` (search up from CWD, fallback to home config)
   - Edda now searches recursively for `.edda.toml` from the current directory up to the home directory, falling back to the home config if not found.
+- [x] **TASK-009**: `edda init` creates a default `.edda.toml` in the current directory if none exists
+  - On initialization, Edda will create a project-local config file with sensible defaults if not present.
 
 ## Project Setup and Foundation
 

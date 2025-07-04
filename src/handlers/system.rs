@@ -10,6 +10,18 @@ pub async fn handle_system_commands(
         SystemCommands::Init => {
             println!("Initializing Edda data directory...");
 
+            // Create a default .edda.toml in the current directory if none exists in the path
+            let cwd = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
+            let local_config = cwd.join(".edda.toml");
+            let config_exists = crate::core::config::find_config_file().is_some();
+            if !config_exists {
+                let default_config = EddaConfig::default();
+                let toml_string = toml::to_string_pretty(&default_config)
+                    .expect("Failed to serialize default config");
+                std::fs::write(&local_config, toml_string).expect("Failed to write .edda.toml");
+                println!("Created default .edda.toml in {:?}", cwd);
+            }
+
             // Create data directory if it doesn't exist
             if !config.data_dir.exists() {
                 std::fs::create_dir_all(&config.data_dir).map_err(|e| {

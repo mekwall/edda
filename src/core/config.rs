@@ -293,7 +293,7 @@ pub fn validate_config(config: &EddaConfig) -> EddaResult<()> {
 
 /// Find the nearest .edda.toml configuration file by searching recursively
 /// from the current directory up to the home directory
-fn find_config_file() -> Option<PathBuf> {
+pub fn find_config_file() -> Option<PathBuf> {
     // Get current working directory
     let current_dir = match std::env::current_dir() {
         Ok(dir) => dir,
