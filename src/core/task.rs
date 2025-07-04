@@ -9,6 +9,7 @@ use uuid::Uuid;
 pub enum TaskStatus {
     #[default]
     Pending,
+    InProgress,
     Completed,
     Deleted,
     Waiting,
@@ -18,6 +19,7 @@ impl std::fmt::Display for TaskStatus {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             TaskStatus::Pending => write!(f, "pending"),
+            TaskStatus::InProgress => write!(f, "in_progress"),
             TaskStatus::Completed => write!(f, "completed"),
             TaskStatus::Deleted => write!(f, "deleted"),
             TaskStatus::Waiting => write!(f, "waiting"),
@@ -31,6 +33,7 @@ impl std::str::FromStr for TaskStatus {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.to_lowercase().as_str() {
             "pending" => Ok(TaskStatus::Pending),
+            "in_progress" | "in-progress" | "inprogress" => Ok(TaskStatus::InProgress),
             "completed" => Ok(TaskStatus::Completed),
             "deleted" => Ok(TaskStatus::Deleted),
             "waiting" => Ok(TaskStatus::Waiting),

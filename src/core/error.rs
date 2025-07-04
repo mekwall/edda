@@ -99,6 +99,9 @@ pub enum SyncError {
 
     #[error("Conflict resolution failed: {message}")]
     Conflict { message: String },
+
+    #[error("Configuration error: {message}")]
+    Configuration { message: String },
 }
 
 /// Result type for Edda operations
