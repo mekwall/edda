@@ -303,7 +303,7 @@ pub struct CreateTaskRequest {
 
 fn validate_priority(priority: &Priority) -> Result<(), ValidationError> {
     match priority {
-        Priority::Low | Priority::Medium | Priority::High | Priority::Critical => Ok(()),
+        Priority::Low | Priority::Medium | Priority::High | Priority::Numeric(_) => Ok(()),
         _ => Err(ValidationError::new("invalid_priority")),
     }
 }
