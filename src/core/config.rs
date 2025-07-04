@@ -200,3 +200,163 @@ fn default_database_url() -> String {
 fn default_max_connections() -> u32 {
     5
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serial_test::serial;
+    use std::fs;
+    use tempfile::TempDir;
+
+    #[test]
+    #[serial]
+    fn test_default_config() {
+        let config = EddaConfig::default();
+        assert_eq!(config.log_level, "info");
+        assert_eq!(config.output_format, "text");
+        assert_eq!(config.github.sync_interval, 300);
+        assert_eq!(config.database.max_connections, 5);
+    }
+
+    #[test]
+    #[serial]
+    fn test_load_config_without_file() {
+        // Clear env vars that may affect config
+        unsafe {
+            std::env::remove_var("EDDA_LOG_LEVEL");
+            std::env::remove_var("EDDA_OUTPUT_FORMAT");
+            std::env::remove_var("EDDA_GITHUB_TOKEN");
+        }
+        let config = load_config(None).unwrap();
+        assert_eq!(config.log_level, "info");
+        assert_eq!(config.output_format, "text");
+    }
+
+    #[test]
+    #[serial]
+    fn test_load_config_from_file() {
+        let temp_dir = TempDir::new().unwrap();
+        let config_path = temp_dir.path().join("test.toml");
+
+        let config_content = r#"
+            log_level = "debug"
+            output_format = "json"
+            [github]
+            token = "test-token"
+            repository = "test/repo"
+            sync_interval = 600
+        "#;
+
+        fs::write(&config_path, config_content).unwrap();
+
+        let config = load_config(Some(config_path)).unwrap();
+        assert_eq!(config.log_level, "debug");
+        assert_eq!(config.output_format, "json");
+        assert_eq!(config.github.token, Some("test-token".to_string()));
+        assert_eq!(config.github.repository, Some("test/repo".to_string()));
+        assert_eq!(config.github.sync_interval, 600);
+    }
+
+    #[test]
+    #[serial]
+    fn test_load_config_file_not_found() {
+        let temp_dir = TempDir::new().unwrap();
+        let config_path = temp_dir.path().join("nonexistent.toml");
+
+        let result = load_config(Some(config_path));
+        assert!(result.is_err());
+        assert!(matches!(
+            result.unwrap_err(),
+            crate::core::EddaError::Config(ConfigError::FileNotFound { .. })
+        ));
+    }
+
+    #[test]
+    #[serial]
+    fn test_load_config_invalid_toml() {
+        let temp_dir = TempDir::new().unwrap();
+        let config_path = temp_dir.path().join("invalid.toml");
+
+        fs::write(&config_path, "invalid toml content").unwrap();
+
+        let result = load_config(Some(config_path));
+        assert!(result.is_err());
+        assert!(matches!(
+            result.unwrap_err(),
+            crate::core::EddaError::Config(ConfigError::InvalidFormat { .. })
+        ));
+    }
+
+    #[test]
+    #[serial]
+    fn test_environment_variable_override() {
+        unsafe {
+            std::env::set_var("EDDA_LOG_LEVEL", "debug");
+            std::env::set_var("EDDA_OUTPUT_FORMAT", "json");
+            std::env::set_var("EDDA_GITHUB_TOKEN", "env-token");
+        }
+
+        let config = load_config(None).unwrap();
+        assert_eq!(config.log_level, "debug");
+        assert_eq!(config.output_format, "json");
+        assert_eq!(config.github.token, Some("env-token".to_string()));
+
+        // Clean up
+        unsafe {
+            std::env::remove_var("EDDA_LOG_LEVEL");
+            std::env::remove_var("EDDA_OUTPUT_FORMAT");
+            std::env::remove_var("EDDA_GITHUB_TOKEN");
+        }
+    }
+
+    #[test]
+    fn test_validate_config_success() {
+        let temp_dir = TempDir::new().unwrap();
+        let mut config = EddaConfig::default();
+        config.data_dir = temp_dir.path().to_path_buf();
+
+        let result = validate_config(&config);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_validate_config_invalid_log_level() {
+        let mut config = EddaConfig::default();
+        config.log_level = "invalid".to_string();
+
+        let result = validate_config(&config);
+        assert!(result.is_err());
+        assert!(matches!(
+            result.unwrap_err(),
+            crate::core::EddaError::Config(ConfigError::Validation { .. })
+        ));
+    }
+
+    #[test]
+    fn test_validate_config_invalid_output_format() {
+        let mut config = EddaConfig::default();
+        config.output_format = "invalid".to_string();
+
+        let result = validate_config(&config);
+        assert!(result.is_err());
+        assert!(matches!(
+            result.unwrap_err(),
+            crate::core::EddaError::Config(ConfigError::Validation { .. })
+        ));
+    }
+
+    #[test]
+    fn test_github_config_default() {
+        let config = GitHubConfig::default();
+        assert_eq!(config.token, None);
+        assert_eq!(config.repository, None);
+        assert_eq!(config.sync_interval, 300);
+    }
+
+    #[test]
+    fn test_database_config_default() {
+        let config = DatabaseConfig::default();
+        assert_eq!(config.url, "sqlite:edda.db");
+        assert_eq!(config.max_connections, 5);
+    }
+}

@@ -73,7 +73,7 @@ MVP Phase 0 focuses on simple task management and GitHub sync to enable internal
 - [x] Create configuration directory
 - [x] Set up log directory
 - [x] Add data directory permissions handling
-  - Commit: <hash>
+  - Commit: f4c8538
 
 ## Task Management Implementation
 

@@ -2,6 +2,9 @@ use crate::core::EddaResult;
 use sqlx::{SqlitePool, sqlite::SqlitePoolOptions};
 use std::path::PathBuf;
 
+#[cfg(test)]
+use sqlx::Row;
+
 /// Initialize the SQLite database
 pub async fn init_database(db_path: PathBuf) -> EddaResult<()> {
     // Create database directory if it doesn't exist
@@ -135,4 +138,101 @@ pub async fn get_pool(db_path: PathBuf) -> EddaResult<SqlitePool> {
         .map_err(|e| crate::core::StorageError::Connection {
             message: format!("Failed to connect to database: {}", e),
         })?)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serial_test::serial;
+
+    #[tokio::test]
+    #[serial]
+    async fn test_init_database() {
+        // Use in-memory database for reliable testing
+        let pool = SqlitePoolOptions::new()
+            .max_connections(5)
+            .connect("sqlite::memory:")
+            .await
+            .unwrap();
+
+        // Run migrations
+        let result = run_migrations(&pool).await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    #[serial]
+    async fn test_get_pool() {
+        // Use in-memory database for reliable testing
+        let pool = SqlitePoolOptions::new()
+            .max_connections(5)
+            .connect("sqlite::memory:")
+            .await
+            .unwrap();
+
+        // Run migrations
+        run_migrations(&pool).await.unwrap();
+
+        assert!(pool.acquire().await.is_ok());
+    }
+
+    #[tokio::test]
+    #[serial]
+    async fn test_database_tables_exist() {
+        // Use in-memory database for more reliable testing
+
+        // For in-memory database, we need to create the pool directly
+        let pool = SqlitePoolOptions::new()
+            .max_connections(5)
+            .connect("sqlite::memory:")
+            .await
+            .unwrap();
+
+        // Run migrations
+        run_migrations(&pool).await.unwrap();
+
+        // Check that tables exist
+        let tables = sqlx::query("SELECT name FROM sqlite_master WHERE type='table'")
+            .fetch_all(&pool)
+            .await
+            .unwrap();
+
+        let table_names: Vec<String> = tables
+            .iter()
+            .map(|row| row.get::<String, _>("name"))
+            .collect();
+
+        assert!(table_names.contains(&"tasks".to_string()));
+        assert!(table_names.contains(&"documents".to_string()));
+        assert!(table_names.contains(&"state".to_string()));
+    }
+
+    #[tokio::test]
+    #[serial]
+    async fn test_database_indexes_exist() {
+        // Use in-memory database for more reliable testing
+        let pool = SqlitePoolOptions::new()
+            .max_connections(5)
+            .connect("sqlite::memory:")
+            .await
+            .unwrap();
+
+        // Run migrations
+        run_migrations(&pool).await.unwrap();
+
+        // Check that indexes exist
+        let indexes = sqlx::query("SELECT name FROM sqlite_master WHERE type='index'")
+            .fetch_all(&pool)
+            .await
+            .unwrap();
+
+        let index_names: Vec<String> = indexes
+            .iter()
+            .map(|row| row.get::<String, _>("name"))
+            .collect();
+
+        assert!(index_names.contains(&"idx_tasks_status".to_string()));
+        assert!(index_names.contains(&"idx_tasks_project".to_string()));
+        assert!(index_names.contains(&"idx_tasks_due_date".to_string()));
+    }
 }

@@ -94,3 +94,61 @@ pub enum SyncError {
 
 /// Result type for Edda operations
 pub type EddaResult<T> = Result<T, EddaError>;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_task_error_display() {
+        let error = TaskError::NotFound {
+            id: "123".to_string(),
+        };
+        assert_eq!(error.to_string(), "Task not found: 123");
+    }
+
+    #[test]
+    fn test_storage_error_display() {
+        let error = StorageError::Connection {
+            message: "test".to_string(),
+        };
+        assert_eq!(error.to_string(), "Database connection failed: test");
+    }
+
+    #[test]
+    fn test_config_error_display() {
+        let error = ConfigError::FileNotFound {
+            path: "/test.toml".to_string(),
+        };
+        assert_eq!(
+            error.to_string(),
+            "Configuration file not found: /test.toml"
+        );
+    }
+
+    #[test]
+    fn test_sync_error_display() {
+        let error = SyncError::ProviderNotFound {
+            provider: "github".to_string(),
+        };
+        assert_eq!(error.to_string(), "Sync provider not found: github");
+    }
+
+    #[test]
+    fn test_error_conversion() {
+        let task_error = TaskError::NotFound {
+            id: "123".to_string(),
+        };
+        let edda_error: EddaError = task_error.into();
+        assert!(matches!(edda_error, EddaError::Task(_)));
+    }
+
+    #[test]
+    fn test_edda_result_type() {
+        let result: EddaResult<String> = Ok("test".to_string());
+        assert!(result.is_ok());
+
+        let error_result: EddaResult<String> = Err(EddaError::Logging("test error".to_string()));
+        assert!(error_result.is_err());
+    }
+}
