@@ -6,7 +6,7 @@
 
 [![Rust](https://img.shields.io/badge/rust-2024-orange.svg)](https://www.rust-lang.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Build Status](https://github.com/mekwall/edda/workflows/CI/badge.svg)](https://github.com/mekwall/edda/actions)
+[![Build Status](https://github.com/mekwall/edda/workflows/main/badge.svg)](https://github.com/mekwall/edda/actions)
 [![Crates.io](https://img.shields.io/crates/v/edda)](https://crates.io/crates/edda)
 
 **Edda** is a fast, minimal CLI tool built in Rust for managing tasks and documents with advanced AI agent integration capabilities. Inspired by the Norse sagas, it acts as an operational memory—structured, queryable, and built for automation.
