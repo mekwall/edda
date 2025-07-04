@@ -1,6 +1,10 @@
 use crate::core::EddaResult;
 use chrono::Utc;
+use flate2::Compression;
+use flate2::read::GzDecoder;
+use flate2::write::GzEncoder;
 use sqlx::{Row, SqlitePool, sqlite::SqlitePoolOptions};
+use std::fs;
 use std::path::PathBuf;
 
 #[cfg(test)]
@@ -10,16 +14,20 @@ use sqlx::Row as _;
 pub async fn init_database(db_path: PathBuf) -> EddaResult<()> {
     // Create database directory if it doesn't exist
     if let Some(parent) = db_path.parent() {
-        std::fs::create_dir_all(parent).map_err(|e| crate::core::StorageError::Initialization {
-            message: format!("Failed to create database directory: {e}"),
+        std::fs::create_dir_all(parent).map_err(|e| {
+            crate::core::EddaError::Storage(crate::core::StorageError::Initialization {
+                message: format!("Failed to create database directory: {e}"),
+            })
         })?;
     }
 
     // Create empty database file if it doesn't exist
     if !db_path.exists() {
         // Create an empty file to initialize SQLite database
-        std::fs::File::create(&db_path).map_err(|e| crate::core::StorageError::Initialization {
-            message: format!("Failed to create database file: {e}"),
+        std::fs::File::create(&db_path).map_err(|e| {
+            crate::core::EddaError::Storage(crate::core::StorageError::Initialization {
+                message: format!("Failed to create database file: {e}"),
+            })
         })?;
     }
 
@@ -31,12 +39,261 @@ pub async fn init_database(db_path: PathBuf) -> EddaResult<()> {
         .max_connections(5)
         .connect(&database_url)
         .await
-        .map_err(|e| crate::core::StorageError::Connection {
-            message: format!("Failed to connect to database: {e}"),
+        .map_err(|e| {
+            crate::core::EddaError::Storage(crate::core::StorageError::Connection {
+                message: format!("Failed to connect to database: {e}"),
+            })
         })?;
 
     // Run migrations
     run_migrations(&pool).await?;
+
+    // Validate database integrity
+    validate_database_integrity(&pool).await?;
+
+    Ok(())
+}
+
+/// Create a backup of the database
+pub async fn create_backup(db_path: &PathBuf, backup_path: &PathBuf) -> EddaResult<()> {
+    // Ensure backup directory exists
+    if let Some(parent) = backup_path.parent() {
+        fs::create_dir_all(parent).map_err(|e| {
+            crate::core::EddaError::Storage(crate::core::StorageError::Backup {
+                message: format!("Failed to create backup directory: {e}"),
+            })
+        })?;
+    }
+
+    // Simple file copy for backup
+    fs::copy(db_path, backup_path).map_err(|e| {
+        crate::core::EddaError::Storage(crate::core::StorageError::Backup {
+            message: format!("Failed to create backup: {e}"),
+        })
+    })?;
+
+    Ok(())
+}
+
+/// Create a compressed backup of the database
+pub async fn create_compressed_backup(db_path: &PathBuf, backup_path: &PathBuf) -> EddaResult<()> {
+    // Ensure backup directory exists
+    if let Some(parent) = backup_path.parent() {
+        fs::create_dir_all(parent).map_err(|e| {
+            crate::core::EddaError::Storage(crate::core::StorageError::Backup {
+                message: format!("Failed to create backup directory: {e}"),
+            })
+        })?;
+    }
+
+    // Read the database file
+    let mut input = fs::File::open(db_path).map_err(|e| {
+        crate::core::EddaError::Storage(crate::core::StorageError::Backup {
+            message: format!("Failed to open database for backup: {e}"),
+        })
+    })?;
+
+    // Create compressed backup
+    let output = fs::File::create(backup_path).map_err(|e| {
+        crate::core::EddaError::Storage(crate::core::StorageError::Backup {
+            message: format!("Failed to create compressed backup: {e}"),
+        })
+    })?;
+
+    let mut encoder = GzEncoder::new(output, Compression::default());
+    std::io::copy(&mut input, &mut encoder).map_err(|e| {
+        crate::core::EddaError::Storage(crate::core::StorageError::Backup {
+            message: format!("Failed to compress backup: {e}"),
+        })
+    })?;
+
+    encoder.finish().map_err(|e| {
+        crate::core::EddaError::Storage(crate::core::StorageError::Backup {
+            message: format!("Failed to finish compression: {e}"),
+        })
+    })?;
+
+    Ok(())
+}
+
+/// Restore database from backup
+pub async fn restore_backup(backup_path: &PathBuf, db_path: &PathBuf) -> EddaResult<()> {
+    // Check if backup file exists
+    if !backup_path.exists() {
+        return Err(crate::core::EddaError::Storage(
+            crate::core::StorageError::Backup {
+                message: format!("Backup file not found: {}", backup_path.display()),
+            },
+        ));
+    }
+
+    // Determine if backup is compressed
+    let is_compressed = backup_path
+        .extension()
+        .and_then(|ext| ext.to_str())
+        .map(|ext| ext == "gz")
+        .unwrap_or(false);
+
+    if is_compressed {
+        restore_compressed_backup(backup_path, db_path).await?;
+    } else {
+        // Simple file copy for uncompressed backup
+        fs::copy(backup_path, db_path).map_err(|e| {
+            crate::core::EddaError::Storage(crate::core::StorageError::Backup {
+                message: format!("Failed to restore backup: {e}"),
+            })
+        })?;
+    }
+
+    // Validate restored database
+    let database_url = format!("sqlite:{}", db_path.to_string_lossy());
+    let pool = SqlitePoolOptions::new()
+        .max_connections(1)
+        .connect(&database_url)
+        .await
+        .map_err(|e| {
+            crate::core::EddaError::Storage(crate::core::StorageError::Connection {
+                message: format!("Failed to connect to restored database: {e}"),
+            })
+        })?;
+
+    validate_database_integrity(&pool).await?;
+
+    Ok(())
+}
+
+/// Restore from compressed backup
+async fn restore_compressed_backup(backup_path: &PathBuf, db_path: &PathBuf) -> EddaResult<()> {
+    let input = fs::File::open(backup_path).map_err(|e| {
+        crate::core::EddaError::Storage(crate::core::StorageError::Backup {
+            message: format!("Failed to open compressed backup: {e}"),
+        })
+    })?;
+
+    let output = fs::File::create(db_path).map_err(|e| {
+        crate::core::EddaError::Storage(crate::core::StorageError::Backup {
+            message: format!("Failed to create restored database: {e}"),
+        })
+    })?;
+
+    let mut decoder = GzDecoder::new(input);
+    let mut output = output;
+    std::io::copy(&mut decoder, &mut output).map_err(|e| {
+        crate::core::EddaError::Storage(crate::core::StorageError::Backup {
+            message: format!("Failed to decompress backup: {e}"),
+        })
+    })?;
+
+    Ok(())
+}
+
+/// Validate database integrity
+async fn validate_database_integrity(pool: &SqlitePool) -> EddaResult<()> {
+    // Run SQLite integrity check
+    let result = sqlx::query("PRAGMA integrity_check")
+        .fetch_one(pool)
+        .await
+        .map_err(|e| {
+            crate::core::EddaError::Storage(crate::core::StorageError::Corruption {
+                message: format!("Failed to run integrity check: {e}"),
+            })
+        })?;
+
+    let integrity_result: String = result.get("integrity_check");
+    if integrity_result != "ok" {
+        return Err(crate::core::EddaError::Storage(
+            crate::core::StorageError::Corruption {
+                message: format!("Database integrity check failed: {}", integrity_result),
+            },
+        ));
+    }
+
+    // Check that all required tables exist
+    let tables = sqlx::query("SELECT name FROM sqlite_master WHERE type='table'")
+        .fetch_all(pool)
+        .await
+        .map_err(|e| {
+            crate::core::EddaError::Storage(crate::core::StorageError::Corruption {
+                message: format!("Failed to check tables: {e}"),
+            })
+        })?;
+
+    let required_tables = vec!["tasks", "documents", "state", "schema_version"];
+    let existing_tables: Vec<String> = tables.iter().map(|row| row.get("name")).collect();
+
+    for required_table in required_tables {
+        if !existing_tables.contains(&required_table.to_string()) {
+            return Err(crate::core::EddaError::Storage(
+                crate::core::StorageError::Corruption {
+                    message: format!("Required table '{}' is missing", required_table),
+                },
+            ));
+        }
+    }
+
+    Ok(())
+}
+
+/// Sanitize data before storage
+pub fn sanitize_string(input: &str) -> String {
+    // Remove null bytes and control characters
+    input
+        .chars()
+        .filter(|&c| c != '\0' && !c.is_control())
+        .collect()
+}
+
+/// Validate and sanitize task data
+pub fn validate_task_data(
+    description: &str,
+    project: Option<&str>,
+    tags: &[String],
+) -> EddaResult<()> {
+    // Validate description
+    if description.trim().is_empty() {
+        return Err(crate::core::EddaError::Task(
+            crate::core::TaskError::Validation {
+                message: "Task description cannot be empty".to_string(),
+            },
+        ));
+    }
+
+    if description.len() > 1000 {
+        return Err(crate::core::EddaError::Task(
+            crate::core::TaskError::Validation {
+                message: "Task description too long (max 1000 characters)".to_string(),
+            },
+        ));
+    }
+
+    // Validate project name
+    if let Some(project_name) = project {
+        if project_name.len() > 100 {
+            return Err(crate::core::EddaError::Task(
+                crate::core::TaskError::Validation {
+                    message: "Project name too long (max 100 characters)".to_string(),
+                },
+            ));
+        }
+    }
+
+    // Validate tags
+    for tag in tags {
+        if tag.trim().is_empty() {
+            return Err(crate::core::EddaError::Task(
+                crate::core::TaskError::Validation {
+                    message: "Tag cannot be empty".to_string(),
+                },
+            ));
+        }
+        if tag.len() > 50 {
+            return Err(crate::core::EddaError::Task(
+                crate::core::TaskError::Validation {
+                    message: format!("Tag '{}' too long (max 50 characters)", tag),
+                },
+            ));
+        }
+    }
 
     Ok(())
 }

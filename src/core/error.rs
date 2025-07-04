@@ -61,6 +61,9 @@ pub enum StorageError {
 
     #[error("Storage initialization failed: {message}")]
     Initialization { message: String },
+
+    #[error("Backup error: {message}")]
+    Backup { message: String },
 }
 
 /// Configuration-specific errors
