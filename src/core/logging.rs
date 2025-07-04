@@ -35,7 +35,7 @@ fn parse_log_level(level: &str) -> Result<Level, Box<dyn std::error::Error>> {
         "info" => Ok(Level::INFO),
         "warn" => Ok(Level::WARN),
         "error" => Ok(Level::ERROR),
-        _ => Err(format!("Invalid log level: {}", level).into()),
+        _ => Err(format!("Invalid log level: {level}").into()),
     }
 }
 

@@ -7,7 +7,7 @@ use cli::{Commands, DocCommands, StateCommands, SystemCommands, TaskCommands, in
 use core::{EddaConfig, EddaResult, Priority, TaskEngine, TaskStatus};
 use std::path::PathBuf;
 use std::str::FromStr;
-use storage::{SqliteTaskStorage, TaskFilter};
+use storage::SqliteTaskStorage;
 
 #[tokio::main]
 async fn main() {
@@ -15,7 +15,7 @@ async fn main() {
     let (cli, config) = match init_app() {
         Ok(result) => result,
         Err(e) => {
-            eprintln!("Failed to initialize application: {}", e);
+            eprintln!("Failed to initialize application: {e}");
             std::process::exit(1);
         }
     };
@@ -37,7 +37,7 @@ async fn main() {
 
     // Handle result
     if let Err(e) = result {
-        eprintln!("Error: {}", e);
+        eprintln!("Error: {e}");
         std::process::exit(1);
     }
 }
@@ -49,7 +49,7 @@ async fn handle_task_commands(subcommand: TaskCommands, config: &EddaConfig) -> 
     } else {
         config.data_dir.join("edda.db")
     };
-    println!("[DEBUG] Using database path: {:?}", db_path);
+    println!("[DEBUG] Using database path: {db_path:?}");
     let pool = storage::get_pool(db_path).await?;
     let storage = SqliteTaskStorage::new(pool);
     let task_engine = TaskEngine::new(Box::new(storage));
@@ -86,7 +86,7 @@ async fn handle_task_commands(subcommand: TaskCommands, config: &EddaConfig) -> 
         TaskCommands::Get { id } => {
             let task_id = id.parse::<i64>().map_err(|_| {
                 core::EddaError::Task(core::TaskError::Validation {
-                    message: format!("Invalid task ID: {}", id),
+                    message: format!("Invalid task ID: {id}"),
                 })
             })?;
             let task = task_engine.get_task(task_id).await?;
@@ -110,7 +110,7 @@ async fn handle_task_commands(subcommand: TaskCommands, config: &EddaConfig) -> 
                         } else {
                             task.tags
                                 .iter()
-                                .map(|t| format!("+{}", t))
+                                .map(|t| format!("+{t}"))
                                 .collect::<Vec<_>>()
                                 .join(" ")
                         }
@@ -119,7 +119,7 @@ async fn handle_task_commands(subcommand: TaskCommands, config: &EddaConfig) -> 
                     println!("  Modified: {}", task.modified_date);
                 }
                 None => {
-                    println!("Task {} not found.", task_id);
+                    println!("Task {task_id} not found.");
                 }
             }
             Ok(())
@@ -127,7 +127,7 @@ async fn handle_task_commands(subcommand: TaskCommands, config: &EddaConfig) -> 
         TaskCommands::Modify { id, field, value } => {
             let task_id = id.parse::<i64>().map_err(|_| {
                 core::EddaError::Task(core::TaskError::Validation {
-                    message: format!("Invalid task ID: {}", id),
+                    message: format!("Invalid task ID: {id}"),
                 })
             })?;
             let mut task = task_engine.get_task(task_id).await?.ok_or_else(|| {
@@ -139,21 +139,21 @@ async fn handle_task_commands(subcommand: TaskCommands, config: &EddaConfig) -> 
                 "status" => {
                     task.status = TaskStatus::from_str(&value).map_err(|e| {
                         core::EddaError::Task(core::TaskError::Validation {
-                            message: format!("Invalid status: {}", e),
+                            message: format!("Invalid status: {e}"),
                         })
                     })?
                 }
                 "priority" => {
                     task.priority = Some(Priority::from_str(&value).map_err(|e| {
                         core::EddaError::Task(core::TaskError::Validation {
-                            message: format!("Invalid priority: {}", e),
+                            message: format!("Invalid priority: {e}"),
                         })
                     })?)
                 }
                 "project" => task.project = Some(value),
                 _ => {
                     return Err(core::EddaError::Task(core::TaskError::Validation {
-                        message: format!("Unknown field: {}", field),
+                        message: format!("Unknown field: {field}"),
                     }));
                 }
             }
@@ -169,7 +169,7 @@ async fn handle_task_commands(subcommand: TaskCommands, config: &EddaConfig) -> 
         TaskCommands::Done { id } => {
             let task_id = id.parse::<i64>().map_err(|_| {
                 core::EddaError::Task(core::TaskError::Validation {
-                    message: format!("Invalid task ID: {}", id),
+                    message: format!("Invalid task ID: {id}"),
                 })
             })?;
             let task = task_engine.complete_task(task_id).await?;
@@ -183,7 +183,7 @@ async fn handle_task_commands(subcommand: TaskCommands, config: &EddaConfig) -> 
         TaskCommands::Delete { id } => {
             let task_id = id.parse::<i64>().map_err(|_| {
                 core::EddaError::Task(core::TaskError::Validation {
-                    message: format!("Invalid task ID: {}", id),
+                    message: format!("Invalid task ID: {id}"),
                 })
             })?;
             let task = task_engine.delete_task(task_id).await?;
@@ -197,7 +197,7 @@ async fn handle_task_commands(subcommand: TaskCommands, config: &EddaConfig) -> 
         TaskCommands::Start { id } => {
             let task_id = id.parse::<i64>().map_err(|_| {
                 core::EddaError::Task(core::TaskError::Validation {
-                    message: format!("Invalid task ID: {}", id),
+                    message: format!("Invalid task ID: {id}"),
                 })
             })?;
             let task = task_engine.start_task(task_id).await?;
@@ -211,7 +211,7 @@ async fn handle_task_commands(subcommand: TaskCommands, config: &EddaConfig) -> 
         TaskCommands::Stop { id } => {
             let task_id = id.parse::<i64>().map_err(|_| {
                 core::EddaError::Task(core::TaskError::Validation {
-                    message: format!("Invalid task ID: {}", id),
+                    message: format!("Invalid task ID: {id}"),
                 })
             })?;
             let task = task_engine.stop_task(task_id).await?;
@@ -225,7 +225,7 @@ async fn handle_task_commands(subcommand: TaskCommands, config: &EddaConfig) -> 
         TaskCommands::Annotate { id, note } => {
             let task_id = id.parse::<i64>().map_err(|_| {
                 core::EddaError::Task(core::TaskError::Validation {
-                    message: format!("Invalid task ID: {}", id),
+                    message: format!("Invalid task ID: {id}"),
                 })
             })?;
             let task = task_engine.annotate_task(task_id, note).await?;
@@ -239,7 +239,7 @@ async fn handle_task_commands(subcommand: TaskCommands, config: &EddaConfig) -> 
         TaskCommands::Tag { id, tag } => {
             let task_id = id.parse::<i64>().map_err(|_| {
                 core::EddaError::Task(core::TaskError::Validation {
-                    message: format!("Invalid task ID: {}", id),
+                    message: format!("Invalid task ID: {id}"),
                 })
             })?;
             let task = task_engine.add_tag(task_id, tag).await?;
@@ -253,7 +253,7 @@ async fn handle_task_commands(subcommand: TaskCommands, config: &EddaConfig) -> 
         TaskCommands::Untag { id, tag } => {
             let task_id = id.parse::<i64>().map_err(|_| {
                 core::EddaError::Task(core::TaskError::Validation {
-                    message: format!("Invalid task ID: {}", id),
+                    message: format!("Invalid task ID: {id}"),
                 })
             })?;
             let task = task_engine.remove_tag(task_id, &tag).await?;
@@ -294,7 +294,7 @@ async fn handle_system_commands(subcommand: SystemCommands, config: &EddaConfig)
             if !config.data_dir.exists() {
                 std::fs::create_dir_all(&config.data_dir).map_err(|e| {
                     core::EddaError::Storage(core::StorageError::Initialization {
-                        message: format!("Failed to create data directory: {}", e),
+                        message: format!("Failed to create data directory: {e}"),
                     })
                 })?;
                 println!("Created data directory: {:?}", config.data_dir);
@@ -306,14 +306,14 @@ async fn handle_system_commands(subcommand: SystemCommands, config: &EddaConfig)
             } else {
                 config.data_dir.join("edda.db")
             };
-            println!("[DEBUG] Using database path: {:?}", db_path);
+            println!("[DEBUG] Using database path: {db_path:?}");
 
             // Create database directory if needed
             if let Some(parent) = db_path.parent() {
                 if !parent.exists() {
                     std::fs::create_dir_all(parent).map_err(|e| {
                         core::EddaError::Storage(core::StorageError::Initialization {
-                            message: format!("Failed to create database directory: {}", e),
+                            message: format!("Failed to create database directory: {e}"),
                         })
                     })?;
                 }
@@ -331,7 +331,7 @@ async fn handle_system_commands(subcommand: SystemCommands, config: &EddaConfig)
             Ok(())
         }
         SystemCommands::Restore { backup } => {
-            println!("Restoring from backup: {:?}", backup);
+            println!("Restoring from backup: {backup:?}");
             // TODO: Implement restore
             Ok(())
         }

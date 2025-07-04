@@ -10,7 +10,7 @@ pub async fn init_database(db_path: PathBuf) -> EddaResult<()> {
     // Create database directory if it doesn't exist
     if let Some(parent) = db_path.parent() {
         std::fs::create_dir_all(parent).map_err(|e| crate::core::StorageError::Initialization {
-            message: format!("Failed to create database directory: {}", e),
+            message: format!("Failed to create database directory: {e}"),
         })?;
     }
 
@@ -18,7 +18,7 @@ pub async fn init_database(db_path: PathBuf) -> EddaResult<()> {
     if !db_path.exists() {
         // Create an empty file to initialize SQLite database
         std::fs::File::create(&db_path).map_err(|e| crate::core::StorageError::Initialization {
-            message: format!("Failed to create database file: {}", e),
+            message: format!("Failed to create database file: {e}"),
         })?;
     }
 
@@ -31,7 +31,7 @@ pub async fn init_database(db_path: PathBuf) -> EddaResult<()> {
         .connect(&database_url)
         .await
         .map_err(|e| crate::core::StorageError::Connection {
-            message: format!("Failed to connect to database: {}", e),
+            message: format!("Failed to connect to database: {e}"),
         })?;
 
     // Run migrations
@@ -73,7 +73,7 @@ pub async fn run_migrations(pool: &SqlitePool) -> EddaResult<()> {
     .execute(pool)
     .await
     .map_err(|e| crate::core::StorageError::Migration {
-        message: format!("Failed to create tasks table: {}", e),
+        message: format!("Failed to create tasks table: {e}"),
     })?;
 
     // Create documents table
@@ -95,7 +95,7 @@ pub async fn run_migrations(pool: &SqlitePool) -> EddaResult<()> {
     .execute(pool)
     .await
     .map_err(|e| crate::core::StorageError::Migration {
-        message: format!("Failed to create documents table: {}", e),
+        message: format!("Failed to create documents table: {e}"),
     })?;
 
     // Create state table
@@ -112,7 +112,7 @@ pub async fn run_migrations(pool: &SqlitePool) -> EddaResult<()> {
     .execute(pool)
     .await
     .map_err(|e| crate::core::StorageError::Migration {
-        message: format!("Failed to create state table: {}", e),
+        message: format!("Failed to create state table: {e}"),
     })?;
 
     // Create indexes for tasks
@@ -120,35 +120,35 @@ pub async fn run_migrations(pool: &SqlitePool) -> EddaResult<()> {
         .execute(pool)
         .await
         .map_err(|e| crate::core::StorageError::Migration {
-            message: format!("Failed to create tasks status index: {}", e),
+            message: format!("Failed to create tasks status index: {e}"),
         })?;
 
     sqlx::query("CREATE INDEX IF NOT EXISTS idx_tasks_project ON tasks(project)")
         .execute(pool)
         .await
         .map_err(|e| crate::core::StorageError::Migration {
-            message: format!("Failed to create tasks project index: {}", e),
+            message: format!("Failed to create tasks project index: {e}"),
         })?;
 
     sqlx::query("CREATE INDEX IF NOT EXISTS idx_tasks_due_date ON tasks(due_date)")
         .execute(pool)
         .await
         .map_err(|e| crate::core::StorageError::Migration {
-            message: format!("Failed to create tasks due date index: {}", e),
+            message: format!("Failed to create tasks due date index: {e}"),
         })?;
 
     sqlx::query("CREATE INDEX IF NOT EXISTS idx_tasks_uuid ON tasks(uuid)")
         .execute(pool)
         .await
         .map_err(|e| crate::core::StorageError::Migration {
-            message: format!("Failed to create tasks uuid index: {}", e),
+            message: format!("Failed to create tasks uuid index: {e}"),
         })?;
 
     sqlx::query("CREATE INDEX IF NOT EXISTS idx_tasks_parent_uuid ON tasks(parent_uuid)")
         .execute(pool)
         .await
         .map_err(|e| crate::core::StorageError::Migration {
-            message: format!("Failed to create tasks parent_uuid index: {}", e),
+            message: format!("Failed to create tasks parent_uuid index: {e}"),
         })?;
 
     Ok(())
@@ -163,7 +163,7 @@ pub async fn get_pool(db_path: PathBuf) -> EddaResult<SqlitePool> {
         .connect(&database_url)
         .await
         .map_err(|e| crate::core::StorageError::Connection {
-            message: format!("Failed to connect to database: {}", e),
+            message: format!("Failed to connect to database: {e}"),
         })?)
 }
 

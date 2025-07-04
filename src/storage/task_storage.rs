@@ -1,7 +1,7 @@
 use crate::core::{Annotation, EddaError, EddaResult, Priority, Task, TaskError, TaskStatus};
 use chrono::{DateTime, Utc};
 use serde_json;
-use sqlx::{Row, SqlitePool, sqlite::SqlitePoolOptions};
+use sqlx::{Row, SqlitePool};
 use uuid::Uuid;
 
 /// Trait for task storage operations
@@ -31,6 +31,7 @@ pub trait TaskStorage {
 
 /// Task filter for querying tasks
 #[derive(Debug, Clone)]
+#[derive(Default)]
 pub struct TaskFilter {
     pub status: Option<TaskStatus>,
     pub project: Option<String>,
@@ -41,19 +42,6 @@ pub struct TaskFilter {
     pub offset: Option<u32>,
 }
 
-impl Default for TaskFilter {
-    fn default() -> Self {
-        Self {
-            status: None,
-            project: None,
-            tags: None,
-            priority: None,
-            include_deleted: false,
-            limit: None,
-            offset: None,
-        }
-    }
-}
 
 /// SQLite implementation of task storage
 pub struct SqliteTaskStorage {
@@ -82,17 +70,17 @@ impl TaskStorage for SqliteTaskStorage {
 
         // Serialize complex fields
         let tags_json = serde_json::to_string(&task.tags).map_err(|e| TaskError::Validation {
-            message: format!("Failed to serialize tags: {}", e),
+            message: format!("Failed to serialize tags: {e}"),
         })?;
 
         let annotations_json =
             serde_json::to_string(&task.annotations).map_err(|e| TaskError::Validation {
-                message: format!("Failed to serialize annotations: {}", e),
+                message: format!("Failed to serialize annotations: {e}"),
             })?;
 
         let depends_json =
             serde_json::to_string(&task.depends).map_err(|e| TaskError::Validation {
-                message: format!("Failed to serialize depends: {}", e),
+                message: format!("Failed to serialize depends: {e}"),
             })?;
 
         let result = sqlx::query(
@@ -128,7 +116,7 @@ impl TaskStorage for SqliteTaskStorage {
         .await
         .map_err(|e| {
             EddaError::Task(TaskError::Storage {
-                message: format!("Failed to create task: {}", e),
+                message: format!("Failed to create task: {e}"),
             })
         })?;
 
@@ -145,7 +133,7 @@ impl TaskStorage for SqliteTaskStorage {
             .await
             .map_err(|e| {
                 EddaError::Task(TaskError::Storage {
-                    message: format!("Failed to get task: {}", e),
+                    message: format!("Failed to get task: {e}"),
                 })
             })?;
 
@@ -162,7 +150,7 @@ impl TaskStorage for SqliteTaskStorage {
             .fetch_optional(&self.pool)
             .await
             .map_err(|e| TaskError::Storage {
-                message: format!("Failed to get task: {}", e),
+                message: format!("Failed to get task: {e}"),
             })?;
 
         if let Some(row) = row {
@@ -184,17 +172,17 @@ impl TaskStorage for SqliteTaskStorage {
 
         // Serialize complex fields
         let tags_json = serde_json::to_string(&task.tags).map_err(|e| TaskError::Validation {
-            message: format!("Failed to serialize tags: {}", e),
+            message: format!("Failed to serialize tags: {e}"),
         })?;
 
         let annotations_json =
             serde_json::to_string(&task.annotations).map_err(|e| TaskError::Validation {
-                message: format!("Failed to serialize annotations: {}", e),
+                message: format!("Failed to serialize annotations: {e}"),
             })?;
 
         let depends_json =
             serde_json::to_string(&task.depends).map_err(|e| TaskError::Validation {
-                message: format!("Failed to serialize depends: {}", e),
+                message: format!("Failed to serialize depends: {e}"),
             })?;
 
         sqlx::query(
@@ -228,7 +216,7 @@ impl TaskStorage for SqliteTaskStorage {
         .execute(&self.pool)
         .await
         .map_err(|e| TaskError::Storage {
-            message: format!("Failed to update task: {}", e),
+            message: format!("Failed to update task: {e}"),
         })?;
 
         Ok(task)
@@ -240,7 +228,7 @@ impl TaskStorage for SqliteTaskStorage {
             .execute(&self.pool)
             .await
             .map_err(|e| TaskError::Storage {
-                message: format!("Failed to delete task: {}", e),
+                message: format!("Failed to delete task: {e}"),
             })?;
 
         Ok(result.rows_affected() > 0)
@@ -270,7 +258,7 @@ impl TaskStorage for SqliteTaskStorage {
 
         // Add conditions to query
         for condition in conditions {
-            query.push_str(&format!(" AND {}", condition));
+            query.push_str(&format!(" AND {condition}"));
         }
 
         // Add ordering
@@ -278,11 +266,11 @@ impl TaskStorage for SqliteTaskStorage {
 
         // Add limit and offset
         if let Some(limit) = filter.limit {
-            query.push_str(&format!(" LIMIT {}", limit));
+            query.push_str(&format!(" LIMIT {limit}"));
         }
 
         if let Some(offset) = filter.offset {
-            query.push_str(&format!(" OFFSET {}", offset));
+            query.push_str(&format!(" OFFSET {offset}"));
         }
 
         // Execute query with parameters
@@ -304,7 +292,7 @@ impl TaskStorage for SqliteTaskStorage {
             .fetch_all(&self.pool)
             .await
             .map_err(|e| TaskError::Storage {
-                message: format!("Failed to list tasks: {}", e),
+                message: format!("Failed to list tasks: {e}"),
             })?;
 
         let mut tasks = Vec::new();
@@ -339,7 +327,7 @@ impl TaskStorage for SqliteTaskStorage {
 
         // Add conditions to query
         for condition in conditions {
-            query.push_str(&format!(" AND {}", condition));
+            query.push_str(&format!(" AND {condition}"));
         }
 
         // Execute query with parameters
@@ -362,7 +350,7 @@ impl TaskStorage for SqliteTaskStorage {
                 .fetch_one(&self.pool)
                 .await
                 .map_err(|e| TaskError::Storage {
-                    message: format!("Failed to count tasks: {}", e),
+                    message: format!("Failed to count tasks: {e}"),
                 })?;
 
         Ok(count as u64)
@@ -393,14 +381,14 @@ fn row_to_task(row: sqlx::sqlite::SqliteRow) -> EddaResult<Task> {
 
     // Parse UUID
     let uuid = Uuid::parse_str(&uuid_str).map_err(|e| TaskError::Validation {
-        message: format!("Invalid UUID: {}", e),
+        message: format!("Invalid UUID: {e}"),
     })?;
 
     // Parse status
     let status = status_str
         .parse::<TaskStatus>()
         .map_err(|e| TaskError::Validation {
-            message: format!("Invalid status: {}", e),
+            message: format!("Invalid status: {e}"),
         })?;
 
     // Parse priority
@@ -409,7 +397,7 @@ fn row_to_task(row: sqlx::sqlite::SqliteRow) -> EddaResult<Task> {
             priority_str
                 .parse::<Priority>()
                 .map_err(|e| TaskError::Validation {
-                    message: format!("Invalid priority: {}", e),
+                    message: format!("Invalid priority: {e}"),
                 })?,
         )
     } else {
@@ -421,7 +409,7 @@ fn row_to_task(row: sqlx::sqlite::SqliteRow) -> EddaResult<Task> {
         Some(
             DateTime::parse_from_rfc3339(&date_str)
                 .map_err(|e| TaskError::Validation {
-                    message: format!("Invalid due date: {}", e),
+                    message: format!("Invalid due date: {e}"),
                 })?
                 .with_timezone(&Utc),
         )
@@ -433,7 +421,7 @@ fn row_to_task(row: sqlx::sqlite::SqliteRow) -> EddaResult<Task> {
         Some(
             DateTime::parse_from_rfc3339(&date_str)
                 .map_err(|e| TaskError::Validation {
-                    message: format!("Invalid scheduled date: {}", e),
+                    message: format!("Invalid scheduled date: {e}"),
                 })?
                 .with_timezone(&Utc),
         )
@@ -445,7 +433,7 @@ fn row_to_task(row: sqlx::sqlite::SqliteRow) -> EddaResult<Task> {
         Some(
             DateTime::parse_from_rfc3339(&date_str)
                 .map_err(|e| TaskError::Validation {
-                    message: format!("Invalid start date: {}", e),
+                    message: format!("Invalid start date: {e}"),
                 })?
                 .with_timezone(&Utc),
         )
@@ -457,7 +445,7 @@ fn row_to_task(row: sqlx::sqlite::SqliteRow) -> EddaResult<Task> {
         Some(
             DateTime::parse_from_rfc3339(&date_str)
                 .map_err(|e| TaskError::Validation {
-                    message: format!("Invalid end date: {}", e),
+                    message: format!("Invalid end date: {e}"),
                 })?
                 .with_timezone(&Utc),
         )
@@ -467,31 +455,31 @@ fn row_to_task(row: sqlx::sqlite::SqliteRow) -> EddaResult<Task> {
 
     let entry_date = DateTime::parse_from_rfc3339(&entry_date_str)
         .map_err(|e| TaskError::Validation {
-            message: format!("Invalid entry date: {}", e),
+            message: format!("Invalid entry date: {e}"),
         })?
         .with_timezone(&Utc);
 
     let modified_date = DateTime::parse_from_rfc3339(&modified_date_str)
         .map_err(|e| TaskError::Validation {
-            message: format!("Invalid modified date: {}", e),
+            message: format!("Invalid modified date: {e}"),
         })?
         .with_timezone(&Utc);
 
     // Parse JSON fields
     let tags: std::collections::HashSet<String> =
         serde_json::from_str(&tags_json).map_err(|e| TaskError::Validation {
-            message: format!("Invalid tags JSON: {}", e),
+            message: format!("Invalid tags JSON: {e}"),
         })?;
 
     let annotations: Vec<Annotation> =
         serde_json::from_str(&annotations_json).map_err(|e| TaskError::Validation {
-            message: format!("Invalid annotations JSON: {}", e),
+            message: format!("Invalid annotations JSON: {e}"),
         })?;
 
     let parent_uuid = if let Some(uuid_str) = parent_uuid_str {
         Some(
             Uuid::parse_str(&uuid_str).map_err(|e| TaskError::Validation {
-                message: format!("Invalid parent UUID: {}", e),
+                message: format!("Invalid parent UUID: {e}"),
             })?,
         )
     } else {
@@ -500,7 +488,7 @@ fn row_to_task(row: sqlx::sqlite::SqliteRow) -> EddaResult<Task> {
 
     let depends: std::collections::HashSet<Uuid> =
         serde_json::from_str(&depends_json).map_err(|e| TaskError::Validation {
-            message: format!("Invalid depends JSON: {}", e),
+            message: format!("Invalid depends JSON: {e}"),
         })?;
 
     Ok(Task {

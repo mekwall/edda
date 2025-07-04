@@ -6,18 +6,15 @@ use uuid::Uuid;
 
 /// Task status enum matching Taskwarrior statuses
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Default)]
 pub enum TaskStatus {
+    #[default]
     Pending,
     Completed,
     Deleted,
     Waiting,
 }
 
-impl Default for TaskStatus {
-    fn default() -> Self {
-        TaskStatus::Pending
-    }
-}
 
 impl std::fmt::Display for TaskStatus {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -40,7 +37,7 @@ impl std::str::FromStr for TaskStatus {
             "deleted" => Ok(TaskStatus::Deleted),
             "waiting" => Ok(TaskStatus::Waiting),
             _ => Err(crate::core::TaskError::Validation {
-                message: format!("Invalid task status: {}", s),
+                message: format!("Invalid task status: {s}"),
             }),
         }
     }
@@ -48,18 +45,15 @@ impl std::str::FromStr for TaskStatus {
 
 /// Task priority enum matching Taskwarrior priorities
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Default)]
 pub enum Priority {
     High,
+    #[default]
     Medium,
     Low,
     Number(u8), // 0-9
 }
 
-impl Default for Priority {
-    fn default() -> Self {
-        Priority::Medium
-    }
-}
 
 impl std::fmt::Display for Priority {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -67,7 +61,7 @@ impl std::fmt::Display for Priority {
             Priority::High => write!(f, "H"),
             Priority::Medium => write!(f, "M"),
             Priority::Low => write!(f, "L"),
-            Priority::Number(n) => write!(f, "{}", n),
+            Priority::Number(n) => write!(f, "{n}"),
         }
     }
 }
@@ -86,12 +80,12 @@ impl std::str::FromStr for Priority {
                         Ok(Priority::Number(n))
                     } else {
                         Err(crate::core::TaskError::Validation {
-                            message: format!("Priority number must be 0-9, got: {}", n),
+                            message: format!("Priority number must be 0-9, got: {n}"),
                         })
                     }
                 } else {
                     Err(crate::core::TaskError::Validation {
-                        message: format!("Invalid priority: {}", s),
+                        message: format!("Invalid priority: {s}"),
                     })
                 }
             }
@@ -346,7 +340,7 @@ impl std::fmt::Display for Task {
         let project = self
             .project
             .as_ref()
-            .map(|p| format!(" [{}]", p))
+            .map(|p| format!(" [{p}]"))
             .unwrap_or_default();
         let tags = if self.tags.is_empty() {
             String::new()
@@ -355,13 +349,13 @@ impl std::fmt::Display for Task {
                 " {}",
                 self.tags
                     .iter()
-                    .map(|t| format!("+{}", t))
+                    .map(|t| format!("+{t}"))
                     .collect::<Vec<_>>()
                     .join(" ")
             )
         };
 
-        write!(f, "{}{}{}{}", id, priority, project, tags)
+        write!(f, "{id}{priority}{project}{tags}")
     }
 }
 
@@ -738,7 +732,7 @@ impl TaskEngine {
             })
         })?;
 
-        let mut filter = crate::storage::TaskFilter::default();
+        let filter = crate::storage::TaskFilter::default();
         // Note: This would need to be implemented in the storage layer
         // For now, we'll get all tasks and filter in memory
         let all_tasks = self.storage.list_tasks(None).await?;

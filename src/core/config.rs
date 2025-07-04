@@ -107,12 +107,12 @@ fn load_config_from_file(path: &PathBuf) -> EddaResult<EddaConfig> {
     }
 
     let content = std::fs::read_to_string(path).map_err(|e| ConfigError::InvalidFormat {
-        message: format!("Failed to read config file: {}", e),
+        message: format!("Failed to read config file: {e}"),
     })?;
 
     toml::from_str(&content)
         .map_err(|e| ConfigError::InvalidFormat {
-            message: format!("Failed to parse TOML: {}", e),
+            message: format!("Failed to parse TOML: {e}"),
         })
         .map_err(Into::into)
 }
@@ -149,7 +149,7 @@ pub fn validate_config(config: &EddaConfig) -> EddaResult<()> {
     // Validate data directory
     if !config.data_dir.exists() {
         std::fs::create_dir_all(&config.data_dir).map_err(|e| ConfigError::Validation {
-            message: format!("Failed to create data directory: {}", e),
+            message: format!("Failed to create data directory: {e}"),
         })?;
     }
 
