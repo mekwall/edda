@@ -1,0 +1,10 @@
+[package]
+name = "edda"
+version = "0.1.0"
+edition = "2024"
+authors = ["Marcus Ekwall <marcus.ekwall@gmail.com>"]
+description = "Edda: AI agent-native CLI for structured task and document management."
+license = "MIT"
+repository = "https://github.com/mekwall/edda"
+
+[dependencies]
